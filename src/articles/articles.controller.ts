@@ -57,6 +57,11 @@ export class ArticlesController {
     return this.articlesService.count(storeId);
   }
 
+  @Get('low')
+  low(@Query('storeId') storeId: string) {
+    return this.articlesService.low(storeId);
+  }
+
   @ApiOperation({ summary: 'Get an article by ID' })
   @ApiParam({ name: 'id', type: String })
   @Get(':id')

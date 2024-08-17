@@ -115,6 +115,17 @@ export class ArticlesService {
     });
   }
 
+  low(storeId: string) {
+    return this.databaseService.article.findMany({
+      where: {
+        storeId,
+        stock: {
+          lt: 10, // Définit le seuil du stock bas
+        },
+      },
+    });
+  }
+
   async findOne(id: string) {
     const article = await this.databaseService.article.findUnique({
       where: {

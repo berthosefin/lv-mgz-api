@@ -58,6 +58,38 @@ export class TransactionsController {
     );
   }
 
+  @Get('totalIn')
+  getTransactionsTotalIn(
+    @Query('cashDeskId') cashDeskId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const parsedStartDate = startDate ? new Date(startDate) : undefined;
+    const parsedEndDate = endDate ? new Date(endDate) : undefined;
+
+    return this.transactionsService.getTransactionsTotalIn(
+      cashDeskId,
+      parsedStartDate,
+      parsedEndDate,
+    );
+  }
+
+  @Get('totalOut')
+  getTransactionsTotalOut(
+    @Query('cashDeskId') cashDeskId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const parsedStartDate = startDate ? new Date(startDate) : undefined;
+    const parsedEndDate = endDate ? new Date(endDate) : undefined;
+
+    return this.transactionsService.getTransactionsTotalOut(
+      cashDeskId,
+      parsedStartDate,
+      parsedEndDate,
+    );
+  }
+
   @ApiOperation({ summary: 'Get the count of transactions by cash desk' })
   @ApiQuery({ name: 'cashDeskId', required: true, type: String })
   @ApiQuery({ name: 'startDate', required: false, type: String })
@@ -76,5 +108,13 @@ export class TransactionsController {
       parsedStartDate,
       parsedEndDate,
     );
+  }
+
+  @Get('monthly-summary')
+  async getMonthlySummary(
+    @Query('storeId') storeId: string,
+    @Query('year') year: number,
+  ) {
+    return this.transactionsService.getMonthlySummary(storeId, year);
   }
 }
