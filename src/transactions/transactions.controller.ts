@@ -7,7 +7,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { TransactionType } from '@prisma/client';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionsService } from './transactions.service';
 
@@ -34,7 +33,7 @@ export class TransactionsController {
     @Query('cashDeskId') cashDeskId?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
-    @Query('type') type?: TransactionType,
+    @Query('type') type?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {

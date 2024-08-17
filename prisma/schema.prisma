@@ -5,12 +5,12 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -57,15 +57,15 @@ model Article {
 }
 
 model Transaction {
-  id         String          @id
-  type       TransactionType
+  id         String    @id
+  type       String
   amount     Float
   label      String
   articles   Article[]
-  cashDesk   CashDesk        @relation(fields: [cashDeskId], references: [id], onDelete: Cascade)
+  cashDesk   CashDesk  @relation(fields: [cashDeskId], references: [id], onDelete: Cascade)
   cashDeskId String
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model CashDesk {
@@ -76,9 +76,4 @@ model CashDesk {
   Transaction   Transaction[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-}
-
-enum TransactionType {
-  IN
-  OUT
 }

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, TransactionType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -67,7 +67,7 @@ export class TransactionsService {
     cashDeskId: string,
     page?: number,
     pageSize?: number,
-    type?: TransactionType,
+    type?: string,
     startDate?: Date,
     endDate?: Date,
   ) {

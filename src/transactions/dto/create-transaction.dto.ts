@@ -1,11 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TransactionType } from '@prisma/client';
 import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
-  IsEnum,
   Min,
 } from 'class-validator';
 
@@ -19,8 +17,8 @@ export class CreateTransactionDto {
   id: string;
 
   @ApiProperty({ example: 'OUT', required: true })
-  @IsEnum(TransactionType)
-  type: TransactionType;
+  @IsString()
+  type: string;
 
   @ApiProperty({ example: 100_000, required: true })
   @IsNumber()
