@@ -3,25 +3,27 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
+  const port = process.env.PORT || 3001;
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: '*',
+  });
+
+  app.setGlobalPrefix('api');
+
   const options = new DocumentBuilder()
-    .setTitle('LV MGZ API')
-    .setDescription('Stock and CashDesk Mangement API')
+    .setTitle('TStock')
+    .setDescription('This is the API documentation')
     .setVersion('1.0')
-    .addServer('http://localhost:3001/api', 'Local environment')
+    .addBearerAuth({ type: 'http', scheme: 'bearer' })
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api-docs', app, document);
 
-  app.enableCors({
-    origin: 'http://localhost:3000',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type,Authorization',
-    credentials: true,
+  await app.listen(port, () => {
+    console.log(`Application starting on http://localhost:${port}`);
   });
-  app.setGlobalPrefix('api');
-  await app.listen(3001);
 }
 bootstrap();
