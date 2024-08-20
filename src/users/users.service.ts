@@ -1,22 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { id, username, password, storeName } = createUserDto;
+    const { username, password, storeName } = createUserDto;
+
+    const hashed_password = await bcrypt.hash(
+      password,
+      await bcrypt.genSalt(10),
+    );
 
     try {
       // Create user
       const user = await this.databaseService.user.create({
         data: {
-          id,
           username,
-          hashed_password: password,
+          hashed_password,
         },
       });
 
@@ -26,7 +31,7 @@ export class UsersService {
         data: {
           id: storeId,
           name: storeName,
-          userId: id,
+          userId: user.id,
         },
       });
 
@@ -60,9 +65,28 @@ export class UsersService {
       },
     });
 
-    // if (!user) {
-    //   throw new NotFoundException('User not found');
-    // }
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    delete user.hashed_password;
+
+    return user;
+  }
+
+  async findByUsername(username: string) {
+    const user = await this.databaseService.user.findUnique({
+      where: {
+        username,
+      },
+      include: {
+        store: {
+          include: {
+            cashDesk: true,
+          },
+        },
+      },
+    });
 
     return user;
   }

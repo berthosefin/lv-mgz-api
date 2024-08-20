@@ -17,7 +17,7 @@ export class AuthService {
     private readonly tokenBlaclkistService: TokenBlacklistService,
   ) {}
   async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
+    const user = await this.usersService.findByUsername(username);
     if (!user) {
       throw new UnauthorizedException('Wrong credential');
     }
@@ -32,7 +32,8 @@ export class AuthService {
   }
 
   async login(userDto: LoginDto): Promise<any> {
-    const user = await this.usersService.findOne(userDto.username);
+    // Utilisez validateUser pour vérifier les informations d'identification
+    const user = await this.validateUser(userDto.username, userDto.password);
     const { accessToken } = await this.getTokens(user.id, user.username);
     return {
       access_token: accessToken,

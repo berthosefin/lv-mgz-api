@@ -3,14 +3,6 @@ import { IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
-    example: 'userid',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsString()
-  id: string;
-
-  @ApiProperty({
     example: 'user',
     required: true,
   })
