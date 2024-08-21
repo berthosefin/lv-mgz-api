@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class UsersService {
@@ -47,6 +52,13 @@ export class UsersService {
 
       return user;
     } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        // Erreur de contrainte unique, par exemple pour un username déjà existant
+        throw new ConflictException('Username already exists');
+      }
       throw error;
     }
   }
@@ -78,6 +90,23 @@ export class UsersService {
     const user = await this.databaseService.user.findUnique({
       where: {
         username,
+      },
+      include: {
+        store: {
+          include: {
+            cashDesk: true,
+          },
+        },
+      },
+    });
+
+    return user;
+  }
+
+  async findById(id: string) {
+    const user = await this.databaseService.user.findUnique({
+      where: {
+        id,
       },
       include: {
         store: {

@@ -34,9 +34,13 @@ export class AuthService {
   async login(userDto: LoginDto): Promise<any> {
     // Utilisez validateUser pour vérifier les informations d'identification
     const user = await this.validateUser(userDto.username, userDto.password);
-    const { accessToken } = await this.getTokens(user.id, user.username);
+    const { accessToken, refreshToken } = await this.getTokens(
+      user.id,
+      user.username,
+    );
     return {
       access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 
@@ -69,5 +73,33 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async refreshTokens(refreshToken: string) {
+    try {
+      const { sub } = await this.jwtService.verifyAsync(refreshToken, {
+        secret: `${process.env.JWT_REFRESH_SECRET}`,
+      });
+
+      const user = await this.usersService.findById(sub);
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Generate new access token
+      const accessToken = await this.jwtService.signAsync(
+        { sub: user.id, username: user.username },
+        {
+          secret: process.env.JWT_SECRET,
+          expiresIn: process.env.JWT_EXPIRATION_TIME,
+        },
+      );
+
+      return {
+        access_token: accessToken,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }
