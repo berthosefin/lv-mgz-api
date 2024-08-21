@@ -37,9 +37,9 @@ export class ArticlesService {
     }
 
     // Check user's cash desk current amount
-    if (cashDesk.currentAmount < articleCost) {
-      throw new Error('Insufficient funds in cash desk');
-    }
+    // if (cashDesk.currentAmount < articleCost) {
+    //   throw new Error('Insufficient funds in cash desk');
+    // }
 
     try {
       // Create article
@@ -159,9 +159,9 @@ export class ArticlesService {
     }
 
     // Check user's cash desk current amount
-    if (cashDesk.currentAmount < replenishCost) {
-      throw new Error('Insufficient funds in cash desk');
-    }
+    // if (cashDesk.currentAmount < replenishCost) {
+    //   throw new Error('Insufficient funds in cash desk');
+    // }
 
     try {
       // Update article
