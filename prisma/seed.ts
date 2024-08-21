@@ -69,6 +69,7 @@ async function main() {
       phone: '0987654321',
       address: '456 Client Road',
       city: 'Client City',
+      storeId: store.id,
     },
   });
 
