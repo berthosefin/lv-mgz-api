@@ -4,7 +4,6 @@ import { randomUUID } from 'crypto';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ReplenishArticleDto } from './dto/replenish-article.dto';
-import { SellArticleDto } from './dto/sell-article.dto';
 
 @Injectable()
 export class ArticlesService {
@@ -203,85 +202,6 @@ export class ArticlesService {
       }
 
       return updatedArticle;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async sell(sellArticleDto: SellArticleDto) {
-    const { articles, sellQuantities, cashDeskId } = sellArticleDto;
-
-    // Get user's cash desk
-    const cashDesk = await this.databaseService.cashDesk.findUnique({
-      where: {
-        id: cashDeskId,
-      },
-    });
-
-    if (!cashDesk) {
-      throw new NotFoundException('Cash desk not found');
-    }
-
-    // Get articles
-    const fetchedArticles = await Promise.all(
-      articles.map((articleId) =>
-        this.databaseService.article.findUnique({
-          where: { id: articleId },
-        }),
-      ),
-    );
-
-    // Chesk articles stock
-    let sellCost = 0;
-    fetchedArticles.forEach((article, index) => {
-      const articleSellCost = article.sellingPrice * sellQuantities[index];
-      sellCost += articleSellCost;
-
-      if (article.stock < sellQuantities[index]) {
-        throw new Error(`Insufficient stock for article ${article.id}`);
-      }
-    });
-
-    try {
-      // Update articles
-      await Promise.all(
-        fetchedArticles.map(async (article, index) => {
-          const updatedStock = article.stock - sellQuantities[index];
-          await this.databaseService.article.update({
-            where: { id: article.id },
-            data: { stock: updatedStock },
-          });
-        }),
-      );
-
-      // Update user's cash desk
-      const updatedCashDesk = await this.databaseService.cashDesk.update({
-        where: {
-          id: cashDeskId,
-        },
-        data: {
-          currentAmount: cashDesk.currentAmount + sellCost,
-        },
-      });
-
-      if (!updatedCashDesk) {
-        throw new Error('Failed to update cash desk');
-      }
-
-      // Create transaction
-      const transaction = await this.createTransaction(
-        'IN',
-        sellCost,
-        'STOCK OUT',
-        articles,
-        cashDeskId,
-      );
-
-      if (!transaction) {
-        throw new Error('Failed to create transaction');
-      }
-
-      return updatedCashDesk;
     } catch (error) {
       throw error;
     }

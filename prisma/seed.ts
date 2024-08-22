@@ -79,7 +79,6 @@ async function main() {
       id: randomUUID(),
       storeId: store.id,
       clientId: client.id,
-      status: 'PENDING',
       isPaid: false,
       isDelivered: false,
     },

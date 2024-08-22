@@ -99,7 +99,7 @@ model CashDesk {
 
 model Client {
   id        String    @id @default(uuid())
-  name      String
+  name      String    @unique
   email     String?
   phone     String?
   address   String?
@@ -118,7 +118,6 @@ model Order {
   storeId     String
   client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId    String
-  status      String
   isPaid      Boolean     @default(false)
   isDelivered Boolean     @default(false)
   invoice     Invoice?
@@ -161,19 +160,3 @@ model InvoiceItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-// enum TransactionTypes {
-//   IN
-//   OUT
-// }
-
-// enum OrderStatus {
-//   PENDING
-//   SHIPPED
-//   DELIVERED
-// }
-
-// enum InvoiceStatus {
-//   UNPAID
-//   PAID
-// }

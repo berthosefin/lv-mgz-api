@@ -3,33 +3,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 
-enum OrderStatus {
-  PENDING = 'PENDING',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-}
-
-class OrderItem {
+class OrderItemDto {
   @ApiProperty()
   @IsNotEmpty()
-  @IsString()
-  id: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  orderId: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
+  @IsUUID()
   articleId: string;
 
   @ApiProperty()
@@ -41,17 +24,13 @@ class OrderItem {
 export class CreateOrderDto {
   @ApiProperty({})
   @IsNotEmpty()
-  @IsString()
+  @IsUUID()
   storeId: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  clientId: string;
-
-  @ApiProperty()
-  @IsEnum(OrderStatus)
-  status: OrderStatus;
+  clientName: string;
 
   @ApiProperty()
   @IsBoolean()
@@ -61,14 +40,9 @@ export class CreateOrderDto {
   @IsBoolean()
   isDelivered: boolean;
 
-  @ApiProperty()
-  @IsOptional()
-  invoice?: { create?: any; connect?: any };
-
   @ApiProperty({
-    type: [OrderItem],
+    type: [OrderItemDto],
   })
-  @IsNotEmpty()
   @IsArray()
-  orderItems: OrderItem[];
+  orderItems: OrderItemDto[];
 }

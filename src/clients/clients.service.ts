@@ -42,6 +42,10 @@ export class ClientsService {
     return this.databaseService.client.findUnique({ where: { id } });
   }
 
+  findByName(name: string) {
+    return this.databaseService.client.findUnique({ where: { name } });
+  }
+
   update(id: string, updateClientDto: UpdateClientDto) {
     return this.databaseService.client.update({
       where: { id },

@@ -16,11 +16,10 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ReplenishArticleDto } from './dto/replenish-article.dto';
-import { SellArticleDto } from './dto/sell-article.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('articles')
 @ApiBearerAuth()
@@ -52,12 +51,6 @@ export class ArticlesController {
     } else {
       return this.articlesService.findAll(storeId);
     }
-  }
-
-  @ApiOperation({ summary: 'Sell articles' })
-  @Post('sell')
-  sell(@Body() sellArticleDto: SellArticleDto) {
-    return this.articlesService.sell(sellArticleDto);
   }
 
   @ApiOperation({ summary: 'Get the count of articles in a store' })
