@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
-import { DatabaseModule } from 'src/database/database.module';
-import { TokenBlacklistService } from 'src/token-blacklist/token-blacklist.service';
-import { JwtModule } from '@nestjs/jwt';
+import { TransactionsService } from './transactions.service';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [DatabaseModule, JwtModule],
+  imports: [AuthModule],
   controllers: [TransactionsController],
-  providers: [TransactionsService, TokenBlacklistService],
+  providers: [TransactionsService],
 })
 export class TransactionsModule {}
