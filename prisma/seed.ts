@@ -77,6 +77,7 @@ async function main() {
   const order = await prisma.order.create({
     data: {
       id: randomUUID(),
+      storeId: store.id,
       clientId: client.id,
       status: 'PENDING',
       isPaid: false,
