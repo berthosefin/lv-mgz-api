@@ -1,4 +1,4 @@
-import { Injectable, Post } from '@nestjs/common';
+import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -8,17 +8,21 @@ export class ClientsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   @Post()
-  create(createClientDto: CreateClientDto) {
-    return this.databaseService.client.create({
-      data: createClientDto,
-    });
+  async create(createClientDto: CreateClientDto) {
+    try {
+      return await this.databaseService.client.create({
+        data: createClientDto,
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
-  findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(storeId: string, page?: number, pageSize?: number) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
 
-    return this.databaseService.client.findMany({
+    return await this.databaseService.client.findMany({
       skip,
       take,
       orderBy: {
@@ -30,30 +34,75 @@ export class ClientsService {
     });
   }
 
-  count(storeId: string) {
-    return this.databaseService.client.count({
+  async count(storeId: string) {
+    return await this.databaseService.client.count({
       where: {
         storeId,
       },
     });
   }
 
-  findOne(id: string) {
-    return this.databaseService.client.findUnique({ where: { id } });
+  async findOne(id: string) {
+    const client = await this.databaseService.client.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        store: {
+          include: {
+            cashDesk: true,
+          },
+        },
+        orders: {
+          include: {
+            orderItems: true,
+          },
+        },
+        invoices: {
+          include: {
+            invoiceItems: true,
+          },
+        },
+      },
+    });
+
+    if (!client) {
+      throw new NotFoundException('Client not found');
+    }
+
+    return client;
   }
 
-  findByName(name: string) {
-    return this.databaseService.client.findUnique({ where: { name } });
-  }
-
-  update(id: string, updateClientDto: UpdateClientDto) {
-    return this.databaseService.client.update({
-      where: { id },
-      data: updateClientDto,
+  async findByName(name: string) {
+    return await this.databaseService.client.findUnique({
+      where: {
+        name,
+      },
     });
   }
 
-  remove(id: string) {
-    return this.databaseService.client.delete({ where: { id } });
+  async update(id: string, updateClientDto: UpdateClientDto) {
+    try {
+      return await this.databaseService.client.update({
+        where: {
+          id,
+        },
+        data: updateClientDto,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    try {
+      return await this.databaseService.client.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 }

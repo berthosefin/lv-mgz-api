@@ -21,10 +21,6 @@ export class ArticlesService {
     // Get user's store
     const store = await this.storeService.findOne(storeId);
 
-    if (!store) {
-      throw new NotFoundException('Store not found');
-    }
-
     try {
       // Create article
       const article = await this.databaseService.article.create({
@@ -53,11 +49,11 @@ export class ArticlesService {
     }
   }
 
-  findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(storeId: string, page?: number, pageSize?: number) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
 
-    return this.databaseService.article.findMany({
+    return await this.databaseService.article.findMany({
       skip,
       take,
       orderBy: {
@@ -69,16 +65,16 @@ export class ArticlesService {
     });
   }
 
-  count(storeId: string) {
-    return this.databaseService.article.count({
+  async count(storeId: string) {
+    return await this.databaseService.article.count({
       where: {
         storeId,
       },
     });
   }
 
-  low(storeId: string) {
-    return this.databaseService.article.findMany({
+  async low(storeId: string) {
+    return await this.databaseService.article.findMany({
       where: {
         storeId,
         stock: {
@@ -115,8 +111,14 @@ export class ArticlesService {
     try {
       // Update article
       const updatedArticle = await this.databaseService.article.update({
-        where: { id },
-        data: { stock: { increment: replenishQuantity } },
+        where: {
+          id,
+        },
+        data: {
+          stock: {
+            increment: replenishQuantity,
+          },
+        },
       });
 
       // Create transaction
@@ -134,11 +136,15 @@ export class ArticlesService {
     }
   }
 
-  remove(id: string) {
-    return this.databaseService.article.delete({
-      where: {
-        id,
-      },
-    });
+  async remove(id: string) {
+    try {
+      return await this.databaseService.article.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 }

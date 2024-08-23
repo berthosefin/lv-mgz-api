@@ -1,11 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, Min } from 'class-validator';
 
 export class ReplenishArticleDto {
-  @ApiProperty({
-    example: 10,
-    required: true,
-  })
+  @ApiProperty()
+  @IsNotEmpty()
   @IsInt()
   @Min(1)
   replenishQuantity: number;

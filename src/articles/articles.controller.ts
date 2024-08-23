@@ -9,13 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -28,13 +22,11 @@ import { ReplenishArticleDto } from './dto/replenish-article.dto';
 export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
-  @ApiOperation({ summary: 'Create a new article in a store' })
   @Post()
   create(@Body() createArticleDto: CreateArticleDto) {
     return this.articlesService.create(createArticleDto);
   }
 
-  @ApiOperation({ summary: 'Get all articles in a store' })
   @ApiQuery({ name: 'storeId', required: true, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
@@ -53,7 +45,6 @@ export class ArticlesController {
     }
   }
 
-  @ApiOperation({ summary: 'Get the count of articles in a store' })
   @ApiQuery({ name: 'storeId', required: true, type: String })
   @Get('count')
   count(@Query('storeId') storeId: string) {
@@ -65,14 +56,12 @@ export class ArticlesController {
     return this.articlesService.low(storeId);
   }
 
-  @ApiOperation({ summary: 'Get an article by ID' })
   @ApiParam({ name: 'id', type: String })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.articlesService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Replenish the stock of an article' })
   @ApiParam({ name: 'id', type: String })
   @Patch(':id')
   replenish(
@@ -82,7 +71,6 @@ export class ArticlesController {
     return this.articlesService.replenish(id, replenishArticleDto);
   }
 
-  @ApiOperation({ summary: 'Delete an article by ID' })
   @ApiParam({ name: 'id', type: String })
   @Delete(':id')
   @Delete(':id')
