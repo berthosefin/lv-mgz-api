@@ -13,7 +13,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const options = new DocumentBuilder()
-    .setTitle('TStock')
+    .setTitle('LV MGZ')
     .setDescription('This is the API documentation')
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer' })

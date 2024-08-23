@@ -8,14 +8,6 @@ import {
 } from 'class-validator';
 
 export class CreateTransactionDto {
-  @ApiProperty({
-    example: 'transaction-id',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsString()
-  id: string;
-
   @ApiProperty({ example: 'OUT', required: true })
   @IsString()
   type: string;

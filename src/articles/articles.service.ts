@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { randomUUID } from 'crypto';
 import { DatabaseService } from 'src/database/database.service';
+import { StoreService } from 'src/store/store.service';
+import { TransactionsService } from 'src/transactions/transactions.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ReplenishArticleDto } from './dto/replenish-article.dto';
 
 @Injectable()
 export class ArticlesService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly storeService: StoreService,
+    private readonly transactionsService: TransactionsService,
+  ) {}
 
   async create(createArticleDto: CreateArticleDto) {
     const { name, purchasePrice, sellingPrice, stock, unit, storeId } =
@@ -15,74 +19,33 @@ export class ArticlesService {
     const articleCost = purchasePrice * stock;
 
     // Get user's store
-    const store = await this.databaseService.store.findUnique({
-      where: {
-        id: storeId,
-      },
-      include: {
-        cashDesk: true,
-      },
-    });
+    const store = await this.storeService.findOne(storeId);
 
     if (!store) {
       throw new NotFoundException('Store not found');
     }
 
-    // Get user's cash desk
-    const cashDesk = store.cashDesk;
-
-    if (!cashDesk) {
-      throw new NotFoundException('Cash desk not found');
-    }
-
-    // Check user's cash desk current amount
-    // if (cashDesk.currentAmount < articleCost) {
-    //   throw new Error('Insufficient funds in cash desk');
-    // }
-
     try {
       // Create article
-      const articleId = randomUUID();
-      const articleData: Prisma.ArticleCreateInput = {
-        id: articleId,
-        name,
-        purchasePrice,
-        sellingPrice,
-        stock,
-        unit,
-        store: { connect: { id: storeId } },
-      };
-
       const article = await this.databaseService.article.create({
-        data: articleData,
-      });
-
-      // Update user's cash desk
-      const updatedCashDesk = await this.databaseService.cashDesk.update({
-        where: {
-          id: cashDesk.id,
-        },
         data: {
-          currentAmount: cashDesk.currentAmount - articleCost,
+          name,
+          purchasePrice,
+          sellingPrice,
+          stock,
+          unit,
+          store: { connect: { id: storeId } },
         },
       });
-
-      if (!updatedCashDesk) {
-        throw new Error('Failed to update cash desk');
-      }
 
       // Create transaction
-      const transaction = await this.createTransaction(
-        'OUT',
-        articleCost,
-        'STOCK IN',
-        [article.id],
-        cashDesk.id,
-      );
-
-      if (!transaction) {
-        throw new Error('Failed to create transaction');
-      }
+      await this.transactionsService.create({
+        type: 'OUT',
+        amount: articleCost,
+        label: 'Achat',
+        articles: [article.id],
+        cashDeskId: store.cashDesk.id,
+      });
 
       return article;
     } catch (error) {
@@ -130,6 +93,13 @@ export class ArticlesService {
       where: {
         id,
       },
+      include: {
+        store: {
+          include: {
+            cashDesk: true,
+          },
+        },
+      },
     });
 
     if (!article) {
@@ -139,67 +109,24 @@ export class ArticlesService {
     return article;
   }
 
-  async replenish(
-    id: string,
-    { replenishQuantity, cashDeskId }: ReplenishArticleDto,
-  ) {
+  async replenish(id: string, { replenishQuantity }: ReplenishArticleDto) {
     const article = await this.findOne(id);
-    const replenishCost = article.purchasePrice * replenishQuantity;
-
-    // Get user's cash desk
-    const cashDesk = await this.databaseService.cashDesk.findUnique({
-      where: {
-        id: cashDeskId,
-      },
-    });
-
-    if (!cashDesk) {
-      throw new NotFoundException('Cash desk not found');
-    }
-
-    // Check user's cash desk current amount
-    // if (cashDesk.currentAmount < replenishCost) {
-    //   throw new Error('Insufficient funds in cash desk');
-    // }
 
     try {
       // Update article
-      const updatedStock = article.stock + replenishQuantity;
       const updatedArticle = await this.databaseService.article.update({
         where: { id },
-        data: { stock: updatedStock },
+        data: { stock: { increment: replenishQuantity } },
       });
-
-      if (!updatedArticle) {
-        throw new Error('Failed to update article');
-      }
-
-      // Update user's cash desk
-      const updatedCashDesk = await this.databaseService.cashDesk.update({
-        where: {
-          id: cashDeskId,
-        },
-        data: {
-          currentAmount: cashDesk.currentAmount - replenishCost,
-        },
-      });
-
-      if (!updatedCashDesk) {
-        throw new Error('Failed to update cash desk');
-      }
 
       // Create transaction
-      const transaction = await this.createTransaction(
-        'OUT',
-        replenishCost,
-        'STOCK IN',
-        [updatedArticle.id],
-        cashDeskId,
-      );
-
-      if (!transaction) {
-        throw new Error('Failed to create transaction');
-      }
+      await this.transactionsService.create({
+        type: 'OUT',
+        amount: article.purchasePrice * replenishQuantity,
+        label: 'Approvisionnement',
+        articles: [article.id],
+        cashDeskId: article.store.cashDesk.id,
+      });
 
       return updatedArticle;
     } catch (error) {
@@ -207,44 +134,10 @@ export class ArticlesService {
     }
   }
 
-  async remove(id: string) {
-    const article = await this.findOne(id);
-
-    if (!article) {
-      throw new NotFoundException('Article not found');
-    }
-
-    // Check article stock
-    if (article.stock <= 0) {
-      this.databaseService.article.delete({
-        where: {
-          id,
-        },
-      });
-    } else {
-      throw new Error('Failed to remove article ! Stock must be 0');
-    }
-
-    return article;
-  }
-
-  private async createTransaction(
-    type: 'IN' | 'OUT',
-    amount: number,
-    label: string,
-    articles: string[],
-    cashDeskId: string,
-  ) {
-    const transactionId = randomUUID();
-
-    return this.databaseService.transaction.create({
-      data: {
-        id: transactionId,
-        type,
-        amount,
-        label,
-        articles: { connect: articles.map((id) => ({ id })) },
-        cashDesk: { connect: { id: cashDeskId } },
+  remove(id: string) {
+    return this.databaseService.article.delete({
+      where: {
+        id,
       },
     });
   }

@@ -7,7 +7,12 @@ export class StoreService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   findOne(id: string) {
-    return this.databaseService.store.findUnique({ where: { id } });
+    return this.databaseService.store.findUnique({
+      where: { id },
+      include: {
+        cashDesk: true,
+      },
+    });
   }
 
   update(id: string, updateStoreDto: UpdateStoreDto) {

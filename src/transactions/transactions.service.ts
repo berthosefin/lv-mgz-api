@@ -1,6 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { randomUUID } from 'crypto';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 
@@ -11,53 +10,38 @@ export class TransactionsService {
   async create(createTransactionDto: CreateTransactionDto) {
     const { type, amount, label, articles, cashDeskId } = createTransactionDto;
 
-    // Get user's cash desk
-    const cashDesk = await this.databaseService.cashDesk.findUnique({
-      where: { id: cashDeskId },
-    });
-
-    if (!cashDesk) {
-      throw new NotFoundException('Cash desk not found');
-    }
-
     try {
-      // Update user's cash desk
+      // Create Transaction
+      const transaction = await this.databaseService.transaction.create({
+        data: {
+          type,
+          amount,
+          label,
+          articles: {
+            connect: articles.map((id) => ({ id })),
+          },
+          cashDesk: {
+            connect: {
+              id: cashDeskId,
+            },
+          },
+        },
+      });
+
+      // Update cashdesk
       if (type === 'IN') {
-        const newAmount = cashDesk.currentAmount + amount;
         await this.databaseService.cashDesk.update({
           where: { id: cashDeskId },
-          data: { currentAmount: newAmount },
+          data: { currentAmount: { increment: amount } },
         });
       } else if (type === 'OUT') {
-        if (amount > cashDesk.currentAmount) {
-          throw new Error('Transaction amount exceeds cash desk balance');
-        }
-        const newAmount = cashDesk.currentAmount - amount;
         await this.databaseService.cashDesk.update({
           where: { id: cashDeskId },
-          data: { currentAmount: newAmount },
+          data: { currentAmount: { decrement: amount } },
         });
       }
 
-      // Create transaction
-      const transactionId = randomUUID();
-      const transactionData: Prisma.TransactionCreateInput = {
-        id: transactionId,
-        type,
-        amount,
-        label,
-        cashDesk: { connect: { id: cashDeskId } },
-      };
-
-      if (articles && articles.length > 0) {
-        transactionData.articles = {
-          connect: articles.map((articleId) => ({ id: articleId })),
-        };
-      }
-
-      return this.databaseService.transaction.create({
-        data: transactionData,
-      });
+      return transaction;
     } catch (error) {
       throw error;
     }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsInt, Min } from 'class-validator';
 
 export class ReplenishArticleDto {
   @ApiProperty({
@@ -9,12 +9,4 @@ export class ReplenishArticleDto {
   @IsInt()
   @Min(1)
   replenishQuantity: number;
-
-  @ApiProperty({
-    example: 'cash-desk-id',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsString()
-  cashDeskId: string;
 }
