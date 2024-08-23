@@ -33,6 +33,7 @@ export class OrdersService {
     const order = await this.databaseService.order.create({
       data: {
         ...orderData,
+        Store: { connect: { id: storeId } },
         client: { connect: { id: client.id } },
         orderItems: {
           create: orderItems.map((item) => ({
