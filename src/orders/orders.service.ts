@@ -28,12 +28,11 @@ export class OrdersService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { storeId, orderItems, clientName, ...orderData } = createOrderDto;
+    const { orderItems, storeId, clientName, ...orderData } = createOrderDto;
 
     const order = await this.databaseService.order.create({
       data: {
         ...orderData,
-        store: { connect: { id: storeId } },
         client: { connect: { id: client.id } },
         orderItems: {
           create: orderItems.map((item) => ({
@@ -90,7 +89,9 @@ export class OrdersService {
         updatedAt: 'desc',
       },
       where: {
-        storeId,
+        client: {
+          storeId,
+        },
       },
       include: {
         client: true,
@@ -133,7 +134,6 @@ export class OrdersService {
       where: { id },
       data: updateOrderDto,
       include: {
-        store: true,
         client: true,
         orderItems: true,
       },
@@ -149,7 +149,7 @@ export class OrdersService {
       }
 
       const updatedCashDesk = await this.databaseService.cashDesk.update({
-        where: { storeId: updatedOrder.store.id },
+        where: { storeId: updatedOrder.client.storeId },
         data: { currentAmount: { increment: totalAmount } },
       });
 

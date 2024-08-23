@@ -4,9 +4,11 @@ import { AppService } from './app.service';
 import { ArticlesModule } from './articles/articles.module';
 import { ClientsModule } from './clients/clients.module';
 import { DatabaseModule } from './database/database.module';
+import { InvoicesModule } from './invoices/invoices.module';
 import { OrdersModule } from './orders/orders.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
+import { StoreModule } from './store/store.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { UsersModule } from './users/users.module';
     TransactionsModule,
     ClientsModule,
     OrdersModule,
+    InvoicesModule,
+    StoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],
