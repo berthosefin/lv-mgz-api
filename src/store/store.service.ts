@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { UpdateStoreDto } from './dto/update-store.dto';
 
@@ -6,19 +6,31 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 export class StoreService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  findOne(id: string) {
-    return this.databaseService.store.findUnique({
-      where: { id },
+  async findOne(id: string) {
+    const store = await this.databaseService.store.findUnique({
+      where: {
+        id,
+      },
       include: {
         cashDesk: true,
       },
     });
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    return store;
   }
 
-  update(id: string, updateStoreDto: UpdateStoreDto) {
-    return this.databaseService.store.update({
-      where: { id },
-      data: updateStoreDto,
-    });
+  async update(id: string, updateStoreDto: UpdateStoreDto) {
+    try {
+      return this.databaseService.store.update({
+        where: { id },
+        data: updateStoreDto,
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 }

@@ -13,7 +13,7 @@ async function main() {
     data: {
       id: randomUUID(),
       username: 'test',
-      hashed_password: hashedPassword, // Use the hashed password
+      hashedPassword, // Use the hashed password
     },
   });
 
@@ -77,7 +77,6 @@ async function main() {
   const order = await prisma.order.create({
     data: {
       id: randomUUID(),
-      storeId: store.id,
       clientId: client.id,
       isPaid: false,
       isDelivered: false,
@@ -111,7 +110,7 @@ async function main() {
             articles.find((a) => a.id === item.articleId)!.sellingPrice,
         0,
       ),
-      status: 'UNPAID',
+      isPaid: false,
     },
   });
 

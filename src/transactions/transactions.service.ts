@@ -47,7 +47,7 @@ export class TransactionsService {
     }
   }
 
-  findAll(
+  async findAll(
     cashDeskId: string,
     page?: number,
     pageSize?: number,
@@ -75,7 +75,7 @@ export class TransactionsService {
       articles: true,
     };
 
-    return this.databaseService.transaction.findMany({
+    return await this.databaseService.transaction.findMany({
       where,
       include,
       take,
@@ -128,7 +128,7 @@ export class TransactionsService {
     return totalOut._sum.amount || 0;
   }
 
-  count(cashDeskId: string, startDate?: Date, endDate?: Date) {
+  async count(cashDeskId: string, startDate?: Date, endDate?: Date) {
     const where: Prisma.TransactionWhereInput = {};
 
     where.cashDeskId = cashDeskId;
@@ -140,7 +140,7 @@ export class TransactionsService {
       };
     }
 
-    return this.databaseService.transaction.count({ where });
+    return await this.databaseService.transaction.count({ where });
   }
 
   async getMonthlySummary(storeId: string, year: number) {

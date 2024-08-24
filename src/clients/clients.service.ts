@@ -10,8 +10,12 @@ export class ClientsService {
   @Post()
   async create(createClientDto: CreateClientDto) {
     try {
+      const { name, ...clientData } = createClientDto;
       return await this.databaseService.client.create({
-        data: createClientDto,
+        data: {
+          name: name.toLocaleLowerCase(),
+          ...clientData,
+        },
       });
     } catch (error) {
       throw error;
@@ -73,10 +77,13 @@ export class ClientsService {
     return client;
   }
 
-  async findByName(name: string) {
+  async findByName(name: string, storeId: string) {
     return await this.databaseService.client.findUnique({
       where: {
-        name,
+        name_storeId: {
+          name,
+          storeId,
+        },
       },
     });
   }

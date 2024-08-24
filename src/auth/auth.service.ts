@@ -22,12 +22,12 @@ export class AuthService {
       throw new UnauthorizedException('Wrong credential');
     }
 
-    const isPasswordMatching = await bcrypt.compare(pass, user.hashed_password);
+    const isPasswordMatching = await bcrypt.compare(pass, user.hashedPassword);
     if (!isPasswordMatching) {
       throw new UnauthorizedException('Wrong credential');
     }
 
-    delete user.hashed_password;
+    delete user.hashedPassword;
     return user;
   }
 

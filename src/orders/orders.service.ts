@@ -1,89 +1,102 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClientsService } from 'src/clients/clients.service';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { TransactionsService } from 'src/transactions/transactions.service';
+import { InvoicesService } from 'src/invoices/invoices.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly clientsService: ClientsService,
+    private readonly transactionsService: TransactionsService,
+    private readonly invoicesService: InvoicesService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto) {
-    let client = await this.clientsService.findByName(
-      createOrderDto.clientName,
-    );
-
-    if (!client) {
-      client = await this.clientsService.create({
-        name: createOrderDto.clientName,
-        storeId: createOrderDto.storeId,
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-      });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { orderItems, storeId, clientName, ...orderData } = createOrderDto;
 
-    const order = await this.databaseService.order.create({
-      data: {
-        ...orderData,
-        Store: { connect: { id: storeId } },
-        client: { connect: { id: client.id } },
-        orderItems: {
-          create: orderItems.map((item) => ({
-            article: { connect: { id: item.articleId } },
-            quantity: item.quantity,
-          })),
-        },
-      },
-    });
+    let client = await this.clientsService.findByName(clientName, storeId);
 
-    // Mise à jour de la caisse si la commande est payée
-    if (orderData.isPaid) {
-      let totalAmount = 0;
-
-      for (const item of orderItems) {
-        const price = await this.getArticlePrice(item.articleId);
-        totalAmount += item.quantity * price;
+    if (!client) {
+      try {
+        client = await this.clientsService.create({
+          name: createOrderDto.clientName.toLocaleLowerCase(),
+          storeId: createOrderDto.storeId,
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+        });
+      } catch (error) {
+        throw error;
       }
+    }
 
-      const updatedCashDesk = await this.databaseService.cashDesk.update({
-        where: { storeId },
-        data: { currentAmount: { increment: totalAmount } },
-      });
-
-      await this.databaseService.transaction.create({
+    try {
+      const order = await this.databaseService.order.create({
         data: {
-          type: 'IN',
-          amount: totalAmount,
-          label: `Achat`,
-          cashDesk: { connect: { id: updatedCashDesk.id } },
-          articles: {
-            connect: orderItems.map((item) => ({ id: item.articleId })),
+          ...orderData,
+          store: { connect: { id: storeId } },
+          client: { connect: { id: client.id } },
+          orderItems: {
+            create: orderItems.map((item) => ({
+              article: { connect: { id: item.articleId } },
+              quantity: item.quantity,
+            })),
+          },
+        },
+        include: {
+          store: {
+            include: {
+              cashDesk: true,
+            },
           },
         },
       });
-    }
 
-    // Mise à jour du stock si la commande est livrée
-    if (orderData.isDelivered) {
-      await this.updateStock(orderItems);
-    }
+      // Création de la facture associée à la commande
+      await this.invoicesService.create({
+        orderId: order.id,
+        clientId: client.id,
+      });
 
-    return order;
+      // Mise à jour de la caisse si la commande est payée
+      if (orderData.isPaid) {
+        const totalAmount = await this.calculateTotalAmount(orderItems);
+
+        // Create transaction
+        await this.transactionsService.create({
+          type: 'IN',
+          amount: totalAmount,
+          label: 'Vente',
+          articles: orderItems.map((item) => item.articleId),
+          cashDeskId: order.store.cashDesk.id,
+        });
+      }
+
+      // Mise à jour du stock si la commande est livrée
+      if (orderData.isDelivered) {
+        await this.updateStock(orderItems);
+      }
+
+      return order;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(storeId: string, page?: number, pageSize?: number) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
 
-    return this.databaseService.order.findMany({
+    return await this.databaseService.order.findMany({
       skip,
       take,
       orderBy: {
@@ -106,16 +119,16 @@ export class OrdersService {
     });
   }
 
-  count(storeId: string) {
-    return this.databaseService.order.count({
+  async count(storeId: string) {
+    return await this.databaseService.order.count({
       where: {
         storeId,
       },
     });
   }
 
-  findOne(id: string) {
-    return this.databaseService.order.findUnique({
+  async findOne(id: string) {
+    const order = await this.databaseService.order.findUnique({
       where: {
         id,
       },
@@ -128,60 +141,113 @@ export class OrdersService {
         client: true,
       },
     });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
   }
 
   async update(id: string, updateOrderDto: UpdateOrderDto) {
-    const updatedOrder = await this.databaseService.order.update({
-      where: { id },
-      data: updateOrderDto,
-      include: {
-        client: true,
-        orderItems: true,
-      },
-    });
+    try {
+      const existingOrder = await this.findOne(id);
 
-    // Mise à jour de la caisse si la commande est payée
-    if (updateOrderDto.isPaid) {
-      let totalAmount = 0;
-
-      for (const item of updatedOrder.orderItems) {
-        const price = await this.getArticlePrice(item.articleId);
-        totalAmount += item.quantity * price;
+      // Prevent updating isPaid to true if it's already true
+      if (existingOrder.isPaid && updateOrderDto.isPaid === false) {
+        throw new BadRequestException(
+          'Cannot set isPaid to false as it is already true',
+        );
       }
 
-      const updatedCashDesk = await this.databaseService.cashDesk.update({
-        where: { storeId: updatedOrder.client.storeId },
-        data: { currentAmount: { increment: totalAmount } },
-      });
+      // Prevent updating isDelivered to true if it's already true
+      if (existingOrder.isDelivered && updateOrderDto.isDelivered === false) {
+        throw new BadRequestException(
+          'Cannot set isDelivered to false as it is already true',
+        );
+      }
 
-      await this.databaseService.transaction.create({
-        data: {
-          type: 'IN',
-          amount: totalAmount,
-          label: `Achat`,
-          cashDesk: { connect: { id: updatedCashDesk.id } },
-          articles: {
-            connect: updatedOrder.orderItems.map((item) => ({
-              id: item.articleId,
-            })),
+      const updatedOrder = await this.databaseService.order.update({
+        where: { id },
+        data: updateOrderDto,
+        include: {
+          client: true,
+          orderItems: true,
+          store: {
+            include: {
+              cashDesk: true,
+            },
           },
         },
       });
-    }
 
-    // Mise à jour du stock si la commande est livrée
-    if (updateOrderDto.isDelivered) {
-      await this.updateStock(updatedOrder.orderItems);
-    }
+      const invoice = await this.databaseService.invoice.findUnique({
+        where: {
+          orderId: id,
+        },
+      });
 
-    return updatedOrder;
+      if (invoice) {
+        // Mise à jour ou création de la facture associée à la commande
+        await this.databaseService.invoice.update({
+          where: {
+            id: invoice.id,
+          },
+          data: {
+            isPaid: updateOrderDto.isPaid,
+          },
+        });
+      }
+
+      // Mise à jour de la caisse si la commande est payée
+      if (updateOrderDto.isPaid) {
+        const totalAmount = await this.calculateTotalAmount(
+          updatedOrder.orderItems,
+        );
+
+        // Create transaction
+        await this.transactionsService.create({
+          type: 'IN',
+          amount: totalAmount,
+          label: 'Vente',
+          articles: updatedOrder.orderItems.map((item) => item.articleId),
+          cashDeskId: updatedOrder.store.cashDesk.id,
+        });
+      }
+
+      // Mise à jour du stock si la commande est livrée
+      if (updateOrderDto.isDelivered) {
+        await this.updateStock(updatedOrder.orderItems);
+      }
+
+      return updatedOrder;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async remove(id: string) {
-    const order = await this.databaseService.order.delete({
-      where: { id },
-    });
-    return order;
+    try {
+      const order = await this.databaseService.order.delete({
+        where: { id },
+      });
+      return order;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async calculateTotalAmount(
+    orderItems: { articleId: string; quantity: number }[],
+  ): Promise<number> {
+    let totalAmount = 0;
+
+    for (const item of orderItems) {
+      const price = await this.getArticlePrice(item.articleId);
+      totalAmount += item.quantity * price;
+    }
+
+    return totalAmount;
   }
 
   private async getArticlePrice(articleId: string): Promise<number> {

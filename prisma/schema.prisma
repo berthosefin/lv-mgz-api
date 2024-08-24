@@ -15,27 +15,19 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  username        String   @unique
-  hashed_password String
-  store           Store?
-  // sessions        Session[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  username       String   @unique
+  hashedPassword String
+  store          Store?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
-// model Session {
-//   id        String   @id
-//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-//   userId    String
-//   expiresAt DateTime
-// }
-
 model TokenBlacklist {
-  id        String    @id @default(uuid())
-  token     String    @unique
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
+  id        String   @id @default(uuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Store {
@@ -49,14 +41,15 @@ model Store {
   city        String?
   phone       String?
   email       String?
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String    @unique
   cashDesk    CashDesk?
   articles    Article[]
+  client      Client[]
+  order       Order[]
+  invoice     Invoice[]
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String    @unique
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  Client      Client[]
-  Order       Order[]
 }
 
 model Article {
@@ -66,11 +59,11 @@ model Article {
   sellingPrice  Float
   stock         Int
   unit          String
-  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  storeId       String
   transactions  Transaction[]
   orderItems    OrderItem[]
   invoiceItems  InvoiceItem[]
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId       String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
@@ -90,73 +83,77 @@ model Transaction {
 model CashDesk {
   id            String        @id
   currentAmount Float
+  Transaction   Transaction[]
   store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   storeId       String        @unique
-  Transaction   Transaction[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
 
 model Client {
   id        String    @id @default(uuid())
-  name      String    @unique
+  name      String
   email     String?
   phone     String?
   address   String?
   city      String?
-  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  storeId   String
   orders    Order[]
   invoices  Invoice[]
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId   String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@unique([name, storeId])
 }
 
 model Order {
   id          String      @id @default(uuid())
-  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId    String
   isPaid      Boolean     @default(false)
   isDelivered Boolean     @default(false)
-  invoice     Invoice?
   orderItems  OrderItem[]
+  invoice     Invoice?
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+  store       Store?      @relation(fields: [storeId], references: [id])
+  storeId     String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  Store       Store?      @relation(fields: [storeId], references: [id])
-  storeId     String?
 }
 
 model OrderItem {
   id        String   @id @default(uuid())
+  quantity  Int
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
   article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   articleId String
-  quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Invoice {
   id           String        @id @default(uuid())
+  amount       Float
+  isPaid       Boolean
+  invoiceItems InvoiceItem[]
   order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId      String        @unique
   client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId     String        @unique
-  amount       Float
-  status       String
-  invoiceItems InvoiceItem[]
+  clientId     String
+  store        Store?        @relation(fields: [storeId], references: [id])
+  storeId      String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
 
 model InvoiceItem {
   id        String   @id @default(uuid())
+  quantity  Int
   invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   invoiceId String
   article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   articleId String
-  quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

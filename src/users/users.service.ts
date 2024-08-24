@@ -16,7 +16,7 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     const { username, password, storeName } = createUserDto;
 
-    const hashed_password = await bcrypt.hash(
+    const hashedPassword = await bcrypt.hash(
       password,
       await bcrypt.genSalt(10),
     );
@@ -25,8 +25,8 @@ export class UsersService {
       // Create user
       const user = await this.databaseService.user.create({
         data: {
-          username,
-          hashed_password,
+          username: username.toLocaleLowerCase(),
+          hashedPassword,
         },
       });
 
@@ -81,7 +81,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    delete user.hashed_password;
+    delete user.hashedPassword;
 
     return user;
   }

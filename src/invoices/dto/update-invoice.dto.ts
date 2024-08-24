@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean } from 'class-validator';
 
 export class UpdateInvoiceDto {
   @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  status: string;
+  @IsBoolean()
+  isPaid: boolean;
 }
