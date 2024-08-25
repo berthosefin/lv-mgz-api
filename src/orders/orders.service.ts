@@ -93,13 +93,15 @@ export class OrdersService {
           articles: orderItems.map((item) => item.articleId),
           cashDeskId: order.store.cashDesk.id,
         });
+
+        if (!orderData.isDelivered) {
+          await this.updateStockAndNotDelivered(orderItems);
+        }
       }
 
       // Mise à jour du stock si la commande est livrée
       if (orderData.isDelivered) {
         await this.updateStock(orderItems);
-      } else {
-        await this.updateStockAndNotDelivered(orderItems);
       }
 
       return order;
@@ -122,6 +124,7 @@ export class OrdersService {
         client: {
           storeId,
         },
+        canceledAt: null,
       },
       include: {
         client: true,
@@ -139,6 +142,7 @@ export class OrdersService {
     return await this.databaseService.order.count({
       where: {
         storeId,
+        canceledAt: null,
       },
     });
   }
@@ -158,7 +162,7 @@ export class OrdersService {
       },
     });
 
-    if (!order) {
+    if (!order || order.canceledAt) {
       throw new NotFoundException('Order not found');
     }
 
@@ -243,11 +247,28 @@ export class OrdersService {
   }
 
   async remove(id: string) {
+    // Vérifiez si le order existe
+    const order = await this.databaseService.order.findUnique({
+      where: { id },
+    });
+
+    if (!order || order.canceledAt) {
+      throw new NotFoundException('Order not found');
+    }
+
     try {
-      const order = await this.databaseService.order.delete({
+      // Vérifiez si le order est non payés ou non livrés
+      if (!order.isPaid || !order.isDelivered) {
+        throw new BadRequestException(
+          'Unpaid or undelivered orders order cannot be deleted',
+        );
+      }
+
+      // Marquez le order comme supprimé
+      return await this.databaseService.order.update({
         where: { id },
+        data: { canceledAt: new Date() },
       });
-      return order;
     } catch (error) {
       throw error;
     }
@@ -320,6 +341,25 @@ export class OrdersService {
     items: { articleId: string; quantity: number }[],
   ) {
     for (const item of items) {
+      const article = await this.databaseService.article.findUnique({
+        where: { id: item.articleId },
+        select: { notDelivered: true },
+      });
+
+      if (!article) {
+        throw new NotFoundException(
+          `Article with ID ${item.articleId} not found`,
+        );
+      }
+
+      // Empêcher le décrément si cela ferait passer notDelivered en dessous de 0
+      const newNotDelivered = article.notDelivered - item.quantity;
+      if (newNotDelivered < 0) {
+        throw new BadRequestException(
+          `Cannot decrement notDelivered below 0 for article ID ${item.articleId}`,
+        );
+      }
+
       await this.databaseService.article.update({
         where: { id: item.articleId },
         data: {

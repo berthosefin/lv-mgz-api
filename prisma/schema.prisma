@@ -121,6 +121,7 @@ model Order {
   storeId     String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  canceledAt  DateTime?
 }
 
 model OrderItem {
