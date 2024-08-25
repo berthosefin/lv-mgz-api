@@ -58,6 +58,7 @@ model Article {
   purchasePrice Float
   sellingPrice  Float
   stock         Int
+  notDelivered  Int           @default(0)
   unit          String
   transactions  Transaction[]
   orderItems    OrderItem[]

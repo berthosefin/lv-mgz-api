@@ -22,6 +22,12 @@ export class OrdersService {
   async create(createOrderDto: CreateOrderDto) {
     const { orderItems, storeId, clientName, ...orderData } = createOrderDto;
 
+    // Vérifie la disponibilité du stock
+    const stockAvailable = await this.checkStockAvailability(orderItems);
+    if (!stockAvailable) {
+      throw new BadRequestException('Stock insuffisant pour certains articles');
+    }
+
     let client = await this.clientsService.findByName(clientName, storeId);
 
     if (!client) {
@@ -84,6 +90,8 @@ export class OrdersService {
       // Mise à jour du stock si la commande est livrée
       if (orderData.isDelivered) {
         await this.updateStock(orderItems);
+      } else {
+        await this.updateStockAndNotDelivered(orderItems);
       }
 
       return order;
@@ -217,7 +225,7 @@ export class OrdersService {
 
       // Mise à jour du stock si la commande est livrée
       if (updateOrderDto.isDelivered) {
-        await this.updateStock(updatedOrder.orderItems);
+        await this.updateStockAndDelivered(updatedOrder.orderItems);
       }
 
       return updatedOrder;
@@ -258,12 +266,56 @@ export class OrdersService {
     return article.sellingPrice;
   }
 
+  private async checkStockAvailability(
+    orderItems: { articleId: string; quantity: number }[],
+  ): Promise<boolean> {
+    for (const item of orderItems) {
+      const article = await this.databaseService.article.findUnique({
+        where: { id: item.articleId },
+        select: { stock: true, notDelivered: true },
+      });
+
+      if (!article || article.stock < item.quantity) {
+        return false; // Un des articles n'a pas assez de stock
+      }
+    }
+
+    return true; // Tous les articles ont assez de stock
+  }
+
   private async updateStock(items: { articleId: string; quantity: number }[]) {
     for (const item of items) {
       await this.databaseService.article.update({
         where: { id: item.articleId },
         data: {
           stock: { decrement: item.quantity },
+        },
+      });
+    }
+  }
+
+  private async updateStockAndNotDelivered(
+    items: { articleId: string; quantity: number }[],
+  ) {
+    for (const item of items) {
+      await this.databaseService.article.update({
+        where: { id: item.articleId },
+        data: {
+          stock: { decrement: item.quantity },
+          notDelivered: { increment: item.quantity },
+        },
+      });
+    }
+  }
+
+  private async updateStockAndDelivered(
+    items: { articleId: string; quantity: number }[],
+  ) {
+    for (const item of items) {
+      await this.databaseService.article.update({
+        where: { id: item.articleId },
+        data: {
+          notDelivered: { decrement: item.quantity },
         },
       });
     }
