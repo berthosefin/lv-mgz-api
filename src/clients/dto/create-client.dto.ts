@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDate,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateClientDto {
   @ApiProperty()
@@ -27,8 +33,12 @@ export class CreateClientDto {
   @IsString()
   city: string;
 
-  @ApiProperty({})
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   storeId: string;
+
+  @ApiProperty()
+  @IsDate()
+  deletedAt?: Date;
 }

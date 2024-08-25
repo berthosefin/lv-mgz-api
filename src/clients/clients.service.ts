@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  Post,
+} from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -34,6 +39,7 @@ export class ClientsService {
       },
       where: {
         storeId,
+        deletedAt: null, // Exclure les clients supprimés
       },
     });
   }
@@ -42,6 +48,7 @@ export class ClientsService {
     return await this.databaseService.client.count({
       where: {
         storeId,
+        deletedAt: null, // Compter uniquement les clients non supprimés
       },
     });
   }
@@ -70,7 +77,7 @@ export class ClientsService {
       },
     });
 
-    if (!client) {
+    if (!client || client.deletedAt) {
       throw new NotFoundException('Client not found');
     }
 
@@ -102,11 +109,40 @@ export class ClientsService {
   }
 
   async remove(id: string) {
+    // Vérifiez si le client existe
+    const client = await this.databaseService.client.findUnique({
+      where: { id },
+      include: {
+        orders: true,
+        invoices: true,
+      },
+    });
+
+    if (!client || client.deletedAt) {
+      throw new NotFoundException('Client not found');
+    }
+
     try {
-      return await this.databaseService.client.delete({
-        where: {
-          id,
-        },
+      // Vérifiez si le client a des orders non payés ou non livrés
+      const hasUnpaidOrUndeliveredOrders = client.orders.some(
+        (order) => !order.isPaid || !order.isDelivered,
+      );
+
+      // Vérifiez si le client a des invoices non payées
+      const hasUnpaidInvoices = client.invoices.some(
+        (invoice) => !invoice.isPaid,
+      );
+
+      if (hasUnpaidOrUndeliveredOrders || hasUnpaidInvoices) {
+        throw new BadRequestException(
+          'Client cannot be deleted because they have unpaid or undelivered orders or unpaid invoices.',
+        );
+      }
+
+      // Marquez le client comme supprimé
+      return await this.databaseService.client.update({
+        where: { id },
+        data: { deletedAt: new Date() },
       });
     } catch (error) {
       throw error;

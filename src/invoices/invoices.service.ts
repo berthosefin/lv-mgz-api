@@ -178,14 +178,4 @@ export class InvoicesService {
       throw error;
     }
   }
-
-  async remove(id: string) {
-    try {
-      return this.databaseService.invoice.delete({
-        where: { id },
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
 }

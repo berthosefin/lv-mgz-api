@@ -30,6 +30,14 @@ export class OrdersService {
 
     let client = await this.clientsService.findByName(clientName, storeId);
 
+    // Si un client supprimé avec le même nom existe, le réactiver
+    if (client && client.deletedAt) {
+      client = await this.clientsService.update(client.id, {
+        deletedAt: null, // Réinitialise le champ deletedAt à null
+      });
+    }
+
+    // Si le client n'existe pas, le créer
     if (!client) {
       try {
         client = await this.clientsService.create({
