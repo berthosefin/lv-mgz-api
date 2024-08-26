@@ -18,11 +18,38 @@ export class ArticlesService {
       createArticleDto;
     const articleCost = purchasePrice * stock;
 
+    // Vérifiez si un article avec le même nom existe dans le store
+    const existingArticle = await this.databaseService.article.findFirst({
+      where: {
+        name,
+        storeId,
+      },
+    });
+
+    // Si l'article existe et est marqué comme supprimé, on le met à jour
+    if (existingArticle && existingArticle.deletedAt) {
+      return await this.databaseService.article.update({
+        where: { id: existingArticle.id },
+        data: {
+          purchasePrice,
+          sellingPrice,
+          stock,
+          unit,
+          deletedAt: null, // Réactive l'article
+        },
+      });
+    }
+
+    // Si l'article existe et n'est pas supprimé, on lance une erreur
+    if (existingArticle) {
+      throw new Error('An article with this name already exists in the store.');
+    }
+
     // Get user's store
     const store = await this.storeService.findOne(storeId);
 
     try {
-      // Create article
+      // Créez un nouvel article
       const article = await this.databaseService.article.create({
         data: {
           name,
@@ -61,6 +88,7 @@ export class ArticlesService {
       },
       where: {
         storeId,
+        deletedAt: null,
       },
     });
   }
@@ -69,6 +97,7 @@ export class ArticlesService {
     return await this.databaseService.article.count({
       where: {
         storeId,
+        deletedAt: null,
       },
     });
   }
@@ -137,11 +166,28 @@ export class ArticlesService {
   }
 
   async remove(id: string) {
+    // Vérifiez si l'article existe
+    const article = await this.databaseService.article.findUnique({
+      where: { id },
+      include: {
+        orderItems: true,
+      },
+    });
+
+    if (!article || article.deletedAt) {
+      throw new NotFoundException('Article not found');
+    }
+
     try {
-      return await this.databaseService.article.delete({
-        where: {
-          id,
-        },
+      // Vérifiez si l'article est associé à une commande
+      if (article.orderItems.length > 0) {
+        throw new Error('Cannot delete an article associated with an order.');
+      }
+
+      // Marquez le article comme supprimé
+      return await this.databaseService.article.update({
+        where: { id },
+        data: { deletedAt: new Date() },
       });
     } catch (error) {
       throw error;

@@ -260,7 +260,7 @@ export class OrdersService {
       // Vérifiez si le order est non payés ou non livrés
       if (!order.isPaid || !order.isDelivered) {
         throw new BadRequestException(
-          'Unpaid or undelivered orders order cannot be deleted',
+          'Unpaid or undelivered orders cannot be deleted',
         );
       }
 
