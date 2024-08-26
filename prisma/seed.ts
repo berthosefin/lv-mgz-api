@@ -78,6 +78,7 @@ async function main() {
     data: {
       id: randomUUID(),
       clientId: client.id,
+      storeId: store.id,
       isPaid: false,
       isDelivered: false,
     },
@@ -103,6 +104,7 @@ async function main() {
       id: randomUUID(),
       orderId: order.id,
       clientId: client.id,
+      storeId: store.id,
       amount: orderItems.reduce(
         (total, item) =>
           total +
