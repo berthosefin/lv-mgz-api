@@ -32,23 +32,25 @@ export class ArticlesController {
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
   @Get()
   findAll(
-    @Query('storeId') storeId?: string,
+    @Query('storeId') storeId: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
   ) {
-    if (page !== undefined && pageSize !== undefined) {
-      const parsedPage = parseInt(page, 10);
-      const parsedPageSize = parseInt(pageSize, 10);
-      return this.articlesService.findAll(storeId, parsedPage, parsedPageSize);
-    } else {
-      return this.articlesService.findAll(storeId);
-    }
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(pageSize, 10) : undefined;
+    return this.articlesService.findAll(
+      storeId,
+      parsedPage,
+      parsedPageSize,
+      search,
+    );
   }
 
   @ApiQuery({ name: 'storeId', required: true, type: String })
   @Get('count')
-  count(@Query('storeId') storeId: string) {
-    return this.articlesService.count(storeId);
+  count(@Query('storeId') storeId: string, @Query('search') search?: string) {
+    return this.articlesService.count(storeId, search);
   }
 
   @Get('low')

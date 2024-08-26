@@ -76,9 +76,34 @@ export class ArticlesService {
     }
   }
 
-  async findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(
+    storeId: string,
+    page?: number,
+    pageSize?: number,
+    search?: string,
+  ) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+
+    // Créez une condition de recherche
+    const searchCondition = search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+            {
+              unit: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
 
     return await this.databaseService.article.findMany({
       skip,
@@ -89,15 +114,36 @@ export class ArticlesService {
       where: {
         storeId,
         deletedAt: null,
+        ...searchCondition, // Ajoutez la condition de recherche
       },
     });
   }
 
-  async count(storeId: string) {
+  async count(storeId: string, search?: string) {
+    const searchCondition = search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+            {
+              unit: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
+
     return await this.databaseService.article.count({
       where: {
         storeId,
         deletedAt: null,
+        ...searchCondition, // Ajoutez la condition de recherche
       },
     });
   }
