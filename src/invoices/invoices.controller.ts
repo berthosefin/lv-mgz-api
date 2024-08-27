@@ -31,19 +31,27 @@ export class InvoicesController {
     @Query('storeId') storeId?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('clientName') clientName?: string,
+    @Query('isPaid') isPaid?: string,
   ) {
-    if (page !== undefined && pageSize !== undefined) {
-      const parsedPage = parseInt(page, 10);
-      const parsedPageSize = parseInt(pageSize, 10);
-      return this.invoicesService.findAll(storeId, parsedPage, parsedPageSize);
-    } else {
-      return this.invoicesService.findAll(storeId);
-    }
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(pageSize, 10) : undefined;
+    return this.invoicesService.findAll(
+      storeId,
+      parsedPage,
+      parsedPageSize,
+      clientName,
+      isPaid,
+    );
   }
 
   @Get('count')
-  count(@Query('storeId') storeId: string) {
-    return this.invoicesService.count(storeId);
+  count(
+    @Query('storeId') storeId: string,
+    @Query('clientName') clientName?: string,
+    @Query('isPaid') isPaid?: string,
+  ) {
+    return this.invoicesService.count(storeId, clientName, isPaid);
   }
 
   @Get(':id')

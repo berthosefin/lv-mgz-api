@@ -57,9 +57,33 @@ export class InvoicesService {
     }
   }
 
-  async findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(
+    storeId: string,
+    page?: number,
+    pageSize?: number,
+    clientName?: string,
+    isPaid?: string,
+  ) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+
+    const whereClause: any = {
+      client: {
+        storeId,
+        name: clientName
+          ? {
+              contains: clientName.toLocaleLowerCase(),
+              // mode: 'insensitive'
+            }
+          : undefined,
+      },
+    };
+
+    if (isPaid === 'true') {
+      whereClause.isPaid = true;
+    } else if (isPaid === 'false') {
+      whereClause.isPaid = false;
+    }
 
     return await this.databaseService.invoice.findMany({
       skip,
@@ -67,11 +91,7 @@ export class InvoicesService {
       orderBy: {
         updatedAt: 'desc',
       },
-      where: {
-        client: {
-          storeId,
-        },
-      },
+      where: whereClause,
       include: {
         order: true,
         client: true,
@@ -85,11 +105,27 @@ export class InvoicesService {
     });
   }
 
-  async count(storeId: string) {
-    return await this.databaseService.order.count({
-      where: {
+  async count(storeId: string, clientName?: string, isPaid?: string) {
+    const whereClause: any = {
+      client: {
         storeId,
+        name: clientName
+          ? {
+              contains: clientName.toLocaleLowerCase(),
+              // mode: 'insensitive'
+            }
+          : undefined,
       },
+    };
+
+    if (isPaid === 'true') {
+      whereClause.isPaid = true;
+    } else if (isPaid === 'false') {
+      whereClause.isPaid = false;
+    }
+
+    return await this.databaseService.order.count({
+      where: whereClause,
     });
   }
 
