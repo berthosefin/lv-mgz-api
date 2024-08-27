@@ -32,19 +32,21 @@ export class ClientsController {
     @Query('storeId') storeId?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
   ) {
-    if (page !== undefined && pageSize !== undefined) {
-      const parsedPage = parseInt(page, 10);
-      const parsedPageSize = parseInt(pageSize, 10);
-      return this.clientsService.findAll(storeId, parsedPage, parsedPageSize);
-    } else {
-      return this.clientsService.findAll(storeId);
-    }
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(pageSize, 10) : undefined;
+    return this.clientsService.findAll(
+      storeId,
+      parsedPage,
+      parsedPageSize,
+      search,
+    );
   }
 
   @Get('count')
-  count(@Query('storeId') storeId: string) {
-    return this.clientsService.count(storeId);
+  count(@Query('storeId') storeId: string, @Query('search') search?: string) {
+    return this.clientsService.count(storeId, search);
   }
 
   @Get(':id')

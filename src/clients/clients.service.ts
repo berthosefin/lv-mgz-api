@@ -27,9 +27,34 @@ export class ClientsService {
     }
   }
 
-  async findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(
+    storeId: string,
+    page?: number,
+    pageSize?: number,
+    search?: string,
+  ) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+
+    // Créez une condition de recherche
+    const searchCondition = search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
 
     return await this.databaseService.client.findMany({
       skip,
@@ -39,16 +64,37 @@ export class ClientsService {
       },
       where: {
         storeId,
-        deletedAt: null, // Exclure les clients supprimés
+        deletedAt: null, // Exclure les clients supprimés,
+        ...searchCondition,
       },
     });
   }
 
-  async count(storeId: string) {
+  async count(storeId: string, search?: string) {
+    const searchCondition = search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: search.toLocaleLowerCase(),
+                // mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
+
     return await this.databaseService.client.count({
       where: {
         storeId,
         deletedAt: null, // Compter uniquement les clients non supprimés
+        ...searchCondition,
       },
     });
   }

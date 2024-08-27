@@ -7,15 +7,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionsService } from './transactions.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('transactions')
 @ApiBearerAuth()
@@ -24,19 +19,11 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
-  @ApiOperation({ summary: 'Create a new transaction' })
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto) {
     return this.transactionsService.create(createTransactionDto);
   }
 
-  @ApiOperation({ summary: 'Get all transactions by cash desk' })
-  @ApiQuery({ name: 'cashDeskId', required: true, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: ['IN', 'OUT'] })
-  @ApiQuery({ name: 'startDate', required: false, type: String })
-  @ApiQuery({ name: 'endDate', required: false, type: String })
   @Get()
   findAll(
     @Query('cashDeskId') cashDeskId?: string,
@@ -99,10 +86,6 @@ export class TransactionsController {
     );
   }
 
-  @ApiOperation({ summary: 'Get the count of transactions by cash desk' })
-  @ApiQuery({ name: 'cashDeskId', required: true, type: String })
-  @ApiQuery({ name: 'startDate', required: false, type: String })
-  @ApiQuery({ name: 'endDate', required: false, type: String })
   @Get('count')
   count(
     @Query('cashDeskId') cashDeskId: string,

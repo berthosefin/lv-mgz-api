@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -27,9 +27,6 @@ export class ArticlesController {
     return this.articlesService.create(createArticleDto);
   }
 
-  @ApiQuery({ name: 'storeId', required: true, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number })
   @Get()
   findAll(
     @Query('storeId') storeId: string,
@@ -47,7 +44,6 @@ export class ArticlesController {
     );
   }
 
-  @ApiQuery({ name: 'storeId', required: true, type: String })
   @Get('count')
   count(@Query('storeId') storeId: string, @Query('search') search?: string) {
     return this.articlesService.count(storeId, search);
