@@ -110,9 +110,34 @@ export class OrdersService {
     }
   }
 
-  async findAll(storeId: string, page?: number, pageSize?: number) {
+  async findAll(
+    storeId: string,
+    page?: number,
+    pageSize?: number,
+    clientName?: string,
+    status?: string,
+  ) {
     const take = pageSize || undefined;
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+
+    const whereClause: any = {
+      client: {
+        storeId,
+        name: clientName
+          ? {
+              contains: clientName.toLocaleLowerCase(),
+              // mode: 'insensitive'
+            }
+          : undefined,
+      },
+      canceledAt: null,
+    };
+
+    if (status === 'isPaid') {
+      whereClause.isPaid = true;
+    } else if (status === 'isDelivered') {
+      whereClause.isDelivered = true;
+    }
 
     return await this.databaseService.order.findMany({
       skip,
@@ -120,12 +145,7 @@ export class OrdersService {
       orderBy: {
         updatedAt: 'desc',
       },
-      where: {
-        client: {
-          storeId,
-        },
-        canceledAt: null,
-      },
+      where: whereClause,
       include: {
         client: true,
         orderItems: {
@@ -138,12 +158,28 @@ export class OrdersService {
     });
   }
 
-  async count(storeId: string) {
-    return await this.databaseService.order.count({
-      where: {
+  async count(storeId: string, clientName?: string, status?: string) {
+    const whereClause: any = {
+      client: {
         storeId,
-        canceledAt: null,
+        name: clientName
+          ? {
+              contains: clientName.toLocaleLowerCase(),
+              // mode: 'insensitive'
+            }
+          : undefined,
       },
+      canceledAt: null,
+    };
+
+    if (status === 'isPaid') {
+      whereClause.isPaid = true;
+    } else if (status === 'isDelivered') {
+      whereClause.isDelivered = true;
+    }
+
+    return await this.databaseService.order.count({
+      where: whereClause,
     });
   }
 

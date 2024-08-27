@@ -32,19 +32,27 @@ export class OrdersController {
     @Query('storeId') storeId?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('clientName') clientName?: string,
+    @Query('status') status?: string,
   ) {
-    if (page !== undefined && pageSize !== undefined) {
-      const parsedPage = parseInt(page, 10);
-      const parsedPageSize = parseInt(pageSize, 10);
-      return this.ordersService.findAll(storeId, parsedPage, parsedPageSize);
-    } else {
-      return this.ordersService.findAll(storeId);
-    }
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(pageSize, 10) : undefined;
+    return this.ordersService.findAll(
+      storeId,
+      parsedPage,
+      parsedPageSize,
+      clientName,
+      status,
+    );
   }
 
   @Get('count')
-  count(@Query('storeId') storeId: string) {
-    return this.ordersService.count(storeId);
+  count(
+    @Query('storeId') storeId: string,
+    @Query('clientName') clientName?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.ordersService.count(storeId, clientName, status);
   }
 
   @Get(':id')
