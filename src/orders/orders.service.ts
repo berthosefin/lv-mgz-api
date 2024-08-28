@@ -22,6 +22,13 @@ export class OrdersService {
   async create(createOrderDto: CreateOrderDto) {
     const { orderItems, storeId, clientName, ...orderData } = createOrderDto;
 
+    // Vérification que isPaid et isDelivered ne sont pas tous les deux à false
+    if (!createOrderDto.isPaid && !createOrderDto.isDelivered) {
+      throw new BadRequestException(
+        'Une commande ne peut pas être créée avec isPaid et isDelivered tous les deux à false',
+      );
+    }
+
     // Vérifie la disponibilité du stock
     const stockAvailable = await this.checkStockAvailability(orderItems);
     if (!stockAvailable) {
