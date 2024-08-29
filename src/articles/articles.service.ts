@@ -28,7 +28,7 @@ export class ArticlesService {
 
     // Si l'article existe et est marqué comme supprimé, on le met à jour
     if (existingArticle && existingArticle.deletedAt) {
-      return await this.databaseService.article.update({
+      const updatedArticle = await this.databaseService.article.update({
         where: { id: existingArticle.id },
         data: {
           purchasePrice,
@@ -37,7 +37,25 @@ export class ArticlesService {
           unit,
           deletedAt: null, // Réactive l'article
         },
+        include: {
+          store: {
+            include: {
+              cashDesk: true,
+            },
+          },
+        },
       });
+
+      // Create transaction
+      await this.transactionsService.create({
+        type: 'OUT',
+        amount: articleCost,
+        label: 'Achat',
+        articles: [updatedArticle.id],
+        cashDeskId: updatedArticle.store.cashDesk.id,
+      });
+
+      return updatedArticle;
     }
 
     // Si l'article existe et n'est pas supprimé, on lance une erreur
