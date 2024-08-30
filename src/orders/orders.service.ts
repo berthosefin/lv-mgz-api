@@ -140,10 +140,10 @@ export class OrdersService {
       canceledAt: null,
     };
 
-    if (status === 'isPaid') {
-      whereClause.isPaid = true;
-    } else if (status === 'isDelivered') {
-      whereClause.isDelivered = true;
+    if (status === 'notPaid') {
+      whereClause.isPaid = false;
+    } else if (status === 'notDelivered') {
+      whereClause.isDelivered = false;
     }
 
     return await this.databaseService.order.findMany({
