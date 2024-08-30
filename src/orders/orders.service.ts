@@ -216,14 +216,14 @@ export class OrdersService {
     try {
       const existingOrder = await this.findOne(id);
 
-      // Prevent updating isPaid to true if it's already true
+      // Empêcher la mise à jour de isPaid à false si c'est déjà true
       if (existingOrder.isPaid && updateOrderDto.isPaid === false) {
         throw new BadRequestException(
           'Cannot set isPaid to false as it is already true',
         );
       }
 
-      // Prevent updating isDelivered to true if it's already true
+      // Empêcher la mise à jour de isDelivered à false si c'est déjà true
       if (existingOrder.isDelivered && updateOrderDto.isDelivered === false) {
         throw new BadRequestException(
           'Cannot set isDelivered to false as it is already true',
@@ -263,7 +263,7 @@ export class OrdersService {
       }
 
       // Mise à jour de la caisse si la commande est payée
-      if (updateOrderDto.isPaid) {
+      if (updateOrderDto.isPaid && !existingOrder.isPaid) {
         const totalAmount = await this.calculateTotalAmount(
           updatedOrder.orderItems,
         );
@@ -279,7 +279,7 @@ export class OrdersService {
       }
 
       // Mise à jour du stock si la commande est livrée
-      if (updateOrderDto.isDelivered) {
+      if (updateOrderDto.isDelivered && !existingOrder.isDelivered) {
         await this.updateStockAndDelivered(updatedOrder.orderItems);
       }
 
@@ -333,8 +333,12 @@ export class OrdersService {
   private async getArticlePrice(articleId: string): Promise<number> {
     const article = await this.databaseService.article.findUnique({
       where: { id: articleId },
-      select: { sellingPrice: true },
     });
+
+    if (!article) {
+      throw new NotFoundException(`Article with id ${articleId} not found`);
+    }
+
     return article.sellingPrice;
   }
 
@@ -344,7 +348,6 @@ export class OrdersService {
     for (const item of orderItems) {
       const article = await this.databaseService.article.findUnique({
         where: { id: item.articleId },
-        select: { stock: true, notDelivered: true },
       });
 
       if (!article || article.stock < item.quantity) {
@@ -355,21 +358,25 @@ export class OrdersService {
     return true; // Tous les articles ont assez de stock
   }
 
-  private async updateStock(items: { articleId: string; quantity: number }[]) {
-    for (const item of items) {
+  private async updateStock(
+    orderItems: { articleId: string; quantity: number }[],
+  ) {
+    for (const item of orderItems) {
       await this.databaseService.article.update({
         where: { id: item.articleId },
         data: {
-          stock: { decrement: item.quantity },
+          stock: {
+            decrement: item.quantity,
+          },
         },
       });
     }
   }
 
   private async updateStockAndNotDelivered(
-    items: { articleId: string; quantity: number }[],
+    orderItems: { articleId: string; quantity: number }[],
   ) {
-    for (const item of items) {
+    for (const item of orderItems) {
       await this.databaseService.article.update({
         where: { id: item.articleId },
         data: {
@@ -381,12 +388,11 @@ export class OrdersService {
   }
 
   private async updateStockAndDelivered(
-    items: { articleId: string; quantity: number }[],
+    orderItems: { articleId: string; quantity: number }[],
   ) {
-    for (const item of items) {
+    for (const item of orderItems) {
       const article = await this.databaseService.article.findUnique({
         where: { id: item.articleId },
-        select: { notDelivered: true },
       });
 
       if (!article) {
