@@ -23,7 +23,9 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   await app.listen(port, () => {
-    console.log(`Application starting on http://localhost:${port}`);
+    console.log(
+      `[Nest] ${process.pid}  - ${new Date().toLocaleString()}     LOG [NestApplication] Nest application running on http://localhost:${port}`,
+    );
   });
 }
 bootstrap();

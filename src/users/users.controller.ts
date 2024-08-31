@@ -17,7 +17,7 @@ export class UsersController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get(':username')
-  findOne(@Param('username') id: string) {
-    return this.usersService.findOne(id);
+  findOne(@Param('username') username: string) {
+    return this.usersService.findOne(username);
   }
 }

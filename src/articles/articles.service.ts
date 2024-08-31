@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { StoreService } from 'src/store/store.service';
 import { TransactionsService } from 'src/transactions/transactions.service';
@@ -245,7 +249,9 @@ export class ArticlesService {
     try {
       // Vérifiez si l'article est associé à une commande
       if (article.orderItems.length > 0) {
-        throw new Error('Cannot delete an article associated with an order.');
+        throw new BadRequestException(
+          'Cannot delete an article associated with an order.',
+        );
       }
 
       // Marquez le article comme supprimé
