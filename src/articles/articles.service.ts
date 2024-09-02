@@ -174,6 +174,7 @@ export class ArticlesService {
     return await this.databaseService.article.findMany({
       where: {
         storeId,
+        deletedAt: null,
         stock: {
           lt: 10, // Définit le seuil du stock bas
         },
