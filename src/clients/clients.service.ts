@@ -56,18 +56,26 @@ export class ClientsService {
         }
       : {};
 
-    return await this.databaseService.client.findMany({
-      skip,
-      take,
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      where: {
-        storeId,
-        deletedAt: null, // Exclure les clients supprimés,
-        ...searchCondition,
-      },
-    });
+    const [clients, total] = await Promise.all([
+      await this.databaseService.client.findMany({
+        skip,
+        take,
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        where: {
+          storeId,
+          deletedAt: null, // Exclure les clients supprimés,
+          ...searchCondition,
+        },
+      }),
+      this.count(storeId, search),
+    ]);
+
+    return {
+      clients,
+      total,
+    };
   }
 
   async count(storeId: string, search?: string) {

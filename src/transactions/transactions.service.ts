@@ -75,15 +75,23 @@ export class TransactionsService {
       articles: true,
     };
 
-    return await this.databaseService.transaction.findMany({
-      where,
-      include,
-      take,
-      skip,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const [transactions, total] = await Promise.all([
+      this.databaseService.transaction.findMany({
+        where,
+        include,
+        take,
+        skip,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.count(cashDeskId, startDate, endDate),
+    ]);
+
+    return {
+      transactions,
+      total,
+    };
   }
 
   async getTransactionsTotalIn(

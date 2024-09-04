@@ -146,23 +146,31 @@ export class OrdersService {
       whereClause.isDelivered = false;
     }
 
-    return await this.databaseService.order.findMany({
-      skip,
-      take,
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      where: whereClause,
-      include: {
-        client: true,
-        orderItems: {
-          include: {
-            article: true,
-          },
+    const [orders, total] = await Promise.all([
+      this.databaseService.order.findMany({
+        skip,
+        take,
+        orderBy: {
+          updatedAt: 'desc',
         },
-        invoice: true,
-      },
-    });
+        where: whereClause,
+        include: {
+          client: true,
+          orderItems: {
+            include: {
+              article: true,
+            },
+          },
+          invoice: true,
+        },
+      }),
+      this.count(storeId, clientName, status),
+    ]);
+
+    return {
+      total,
+      orders,
+    };
   }
 
   async count(storeId: string, clientName?: string, status?: string) {

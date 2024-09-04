@@ -85,24 +85,32 @@ export class InvoicesService {
       whereClause.isPaid = false;
     }
 
-    return await this.databaseService.invoice.findMany({
-      skip,
-      take,
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      where: whereClause,
-      include: {
-        order: true,
-        client: true,
-        invoiceItems: {
-          include: {
-            article: true,
-          },
+    const [invoices, total] = await Promise.all([
+      this.databaseService.invoice.findMany({
+        skip,
+        take,
+        orderBy: {
+          updatedAt: 'desc',
         },
-        store: true,
-      },
-    });
+        where: whereClause,
+        include: {
+          order: true,
+          client: true,
+          invoiceItems: {
+            include: {
+              article: true,
+            },
+          },
+          store: true,
+        },
+      }),
+      this.count(storeId, clientName, isPaid),
+    ]);
+
+    return {
+      invoices,
+      total,
+    };
   }
 
   async count(storeId: string, clientName?: string, isPaid?: string) {

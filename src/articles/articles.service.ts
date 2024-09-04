@@ -127,18 +127,26 @@ export class ArticlesService {
         }
       : {};
 
-    return await this.databaseService.article.findMany({
-      skip,
-      take,
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      where: {
-        storeId,
-        deletedAt: null,
-        ...searchCondition, // Ajoutez la condition de recherche
-      },
-    });
+    const [articles, total] = await Promise.all([
+      this.databaseService.article.findMany({
+        skip,
+        take,
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        where: {
+          storeId,
+          deletedAt: null,
+          ...searchCondition, // Ajoutez la condition de recherche
+        },
+      }),
+      this.count(storeId, search),
+    ]);
+
+    return {
+      total,
+      articles,
+    };
   }
 
   async count(storeId: string, search?: string) {
