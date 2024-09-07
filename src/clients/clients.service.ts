@@ -14,8 +14,19 @@ export class ClientsService {
 
   @Post()
   async create(createClientDto: CreateClientDto) {
+    const { name, ...clientData } = createClientDto;
+
+    const existingClient = await this.databaseService.client.findFirst({
+      where: {
+        name: name.toLocaleLowerCase(),
+      },
+    });
+
+    if (existingClient) {
+      throw new BadRequestException(`Client with name ${name} already exists.`);
+    }
+
     try {
-      const { name, ...clientData } = createClientDto;
       return await this.databaseService.client.create({
         data: {
           name: name.toLocaleLowerCase(),
