@@ -64,7 +64,9 @@ export class ArticlesService {
 
     // Si l'article existe et n'est pas supprimé, on lance une erreur
     if (existingArticle) {
-      throw new Error('An article with this name already exists in the store.');
+      throw new BadRequestException(
+        'An article with this name already exists in the store.',
+      );
     }
 
     // Get user's store
