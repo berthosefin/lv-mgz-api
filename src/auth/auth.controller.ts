@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshDto } from './dto/refresh.dto';
+import { LogoutDto } from './dto/logout.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -42,9 +43,10 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Req() req) {
-    const authHeader = req.headers.authorization;
-    const token = authHeader.substring(7);
-    return await this.authService.logout(token);
+  async logout(@Body() logoutDto: LogoutDto) {
+    return await this.authService.logout(
+      logoutDto.access_token,
+      logoutDto.refresh_token,
+    );
   }
 }

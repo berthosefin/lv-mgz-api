@@ -14,7 +14,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private readonly tokenBlaclkistService: TokenBlacklistService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
   ) {}
   async validateUser(username: string, pass: string): Promise<any> {
     const user = await this.usersService.findByUsername(username);
@@ -46,9 +46,10 @@ export class AuthService {
     };
   }
 
-  async logout(token: string) {
+  async logout(token: string, refreshToken: string) {
     try {
-      await this.tokenBlaclkistService.create(token);
+      await this.tokenBlacklistService.create(token);
+      await this.tokenBlacklistService.create(refreshToken);
       return {
         msg: 'User disconnected',
       };
@@ -83,6 +84,12 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
+    const isBlacklisted =
+      await this.tokenBlacklistService.findOne(refreshToken);
+    if (isBlacklisted) {
+      throw new UnauthorizedException('Token has been blacklisted');
+    }
+
     try {
       const { sub } = await this.jwtService.verifyAsync(refreshToken, {
         secret: `${process.env.JWT_REFRESH_SECRET}`,
