@@ -22,6 +22,16 @@ export class ClientsService {
       },
     });
 
+    if (existingClient && existingClient.deletedAt) {
+      return await this.databaseService.client.update({
+        where: { id: existingClient.id },
+        data: {
+          deletedAt: null,
+          ...clientData,
+        },
+      });
+    }
+
     if (existingClient) {
       throw new BadRequestException(`Client with name ${name} already exists.`);
     }
