@@ -1,18 +1,10 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RefreshDto } from './dto/refresh.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { RefreshDto } from './dto/refresh.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -27,17 +19,6 @@ export class AuthController {
   @Post('refresh')
   async refreshTokens(@Body() refreshDto: RefreshDto) {
     return await this.authService.refreshTokens(refreshDto.refresh_token);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Get('validate')
-  validateUser(@Req() req) {
-    const user = req.user; // req.user devrait être défini par JwtAuthGuard
-    if (!user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    return { valid: true, user };
   }
 
   @ApiBearerAuth()
