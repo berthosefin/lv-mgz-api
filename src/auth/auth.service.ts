@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { TokenBlacklistService } from 'src/token-blacklist/token-blacklist.service';
 import { UsersService } from 'src/users/users.service';
 import { LoginDto } from './dto/login.dto';
-import { TokenBlacklistService } from 'src/token-blacklist/token-blacklist.service';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +40,15 @@ export class AuthService {
       user.store.id,
       user.store.cashDesk.id,
     );
+
     return {
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        username: user.username,
+        storeId: user.store.id,
+        cashDeskId: user.store.cashDesk.id,
+      },
       access_token: accessToken,
       refresh_token: refreshToken,
     };

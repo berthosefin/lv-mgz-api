@@ -18,7 +18,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const token = this.extractTokenFromRequest(request);
     if (!token) {
       throw new UnauthorizedException('Missing authorization header');
     }
@@ -41,8 +41,22 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return true;
   }
 
-  private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+  private extractTokenFromRequest(request: any): string | undefined {
+    let token: string | undefined;
+
+    // Vérifier dans les cookies
+    if (request.cookies && request.cookies['access_token']) {
+      token = request.cookies['access_token'];
+    }
+
+    // Vérifier dans le header Authorization si le token n'est pas dans les cookies
+    if (!token && request.headers.authorization) {
+      const [type, extractedToken] = request.headers.authorization.split(' ');
+      if (type === 'Bearer') {
+        token = extractedToken;
+      }
+    }
+
+    return token;
   }
 }
