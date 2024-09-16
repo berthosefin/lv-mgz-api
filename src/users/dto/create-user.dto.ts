@@ -23,4 +23,9 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   storeName: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  currency: string;
 }

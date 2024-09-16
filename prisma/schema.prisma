@@ -42,6 +42,7 @@ model Store {
   city        String?
   phone       String?
   email       String?
+  currency    String    @default("USD")
   cashDesk    CashDesk?
   articles    Article[]
   client      Client[]

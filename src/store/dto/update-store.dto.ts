@@ -46,4 +46,8 @@ export class UpdateStoreDto {
   @IsOptional()
   @IsEmail()
   email: string;
+
+  @ApiProperty()
+  @IsString()
+  currency: string;
 }

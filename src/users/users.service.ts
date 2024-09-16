@@ -13,7 +13,7 @@ export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { username, email, password, storeName } = createUserDto;
+    const { username, email, password, storeName, currency } = createUserDto;
 
     const hashedPassword = await bcrypt.hash(
       password,
@@ -29,6 +29,7 @@ export class UsersService {
           store: {
             create: {
               name: storeName,
+              currency,
               cashDesk: {
                 create: {
                   currentAmount: 0,
@@ -44,7 +45,7 @@ export class UsersService {
         error.code === 'P2002'
       ) {
         // Erreur de contrainte unique, par exemple pour un username déjà existant
-        throw new ConflictException('Username already exists');
+        throw new ConflictException('Username or Email already exists');
       }
       throw error;
     }
