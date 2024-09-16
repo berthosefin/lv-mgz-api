@@ -39,6 +39,7 @@ export class AuthService {
       user.username,
       user.store.id,
       user.store.cashDesk.id,
+      user.store.currency,
     );
 
     return {
@@ -48,6 +49,7 @@ export class AuthService {
         username: user.username,
         storeId: user.store.id,
         cashDeskId: user.store.cashDesk.id,
+        currency: user.store.currency,
       },
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -71,8 +73,9 @@ export class AuthService {
     username: string,
     storeId: string,
     cashDeskId: string,
+    currency: string,
   ) {
-    const payload = { sub: userId, username, storeId, cashDeskId };
+    const payload = { sub: userId, username, storeId, cashDeskId, currency };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
