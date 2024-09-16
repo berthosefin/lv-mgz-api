@@ -16,8 +16,8 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly tokenBlacklistService: TokenBlacklistService,
   ) {}
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Wrong credential');
     }
@@ -33,7 +33,7 @@ export class AuthService {
 
   async login(userDto: LoginDto): Promise<any> {
     // Utilisez validateUser pour vérifier les informations d'identification
-    const user = await this.validateUser(userDto.username, userDto.password);
+    const user = await this.validateUser(userDto.email, userDto.password);
     const { accessToken, refreshToken } = await this.getTokens(
       user.id,
       user.username,

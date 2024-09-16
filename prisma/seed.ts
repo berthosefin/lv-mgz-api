@@ -13,6 +13,7 @@ async function main() {
     data: {
       id: randomUUID(),
       username: 'test',
+      email: 'test@testmail.com',
       hashedPassword, // Use the hashed password
     },
   });
