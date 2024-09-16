@@ -113,7 +113,13 @@ export class AuthService {
 
       // Generate new access token
       const accessToken = await this.jwtService.signAsync(
-        { sub: user.id, username: user.username },
+        {
+          sub: user.id,
+          username: user.username,
+          storeId: user.store.id,
+          cashDeskId: user.store.cashDesk.id,
+          currency: user.store.currency,
+        },
         {
           secret: process.env.JWT_SECRET,
           expiresIn: process.env.JWT_EXPIRATION_TIME,
