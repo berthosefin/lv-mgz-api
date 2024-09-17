@@ -1,49 +1,50 @@
-# API NestJS pour la Gestion de Magasin
+# Store management backend
 
-Cette API NestJS fournit des fonctionnalités pour gérer les articles, les transactions et les utilisateurs d'un système de gestion de magasin. Elle est conçue pour être utilisée dans le cadre d'une application de gestion de magasin.
+Store Management is a backend application built with [NestJS](https://nestjs.com/) for comprehensive store management. It allows you to manage products, orders, customers, invoices, and more.
 
-## Installation
+This project is a backend part of [Store Management](https://github.com/berthosefin/lv-mgz).
 
-1. Clonez ce dépôt sur votre machine locale.
-2. Assurez-vous d'avoir Node.js et npm installés sur votre machine.
-3. Exécutez `npm install` pour installer les dépendances.
-4. Configurez vos paramètres de connexion (`DATABASE_URL`) dans le fichier `.env`.
-5. Exécutez `npm run start` pour lancer le serveur.
+**Features**:
 
-## Fonctionnalités Principales
+<ul>
+	<li>- [x] User Management</li>
+	<li>- [x] Article management</li>
+	<li>- [x] Order management</li>
+	<li>- [x] Customer management</li>
+	<li>- [x] Invoice management</li>
+	<li>- [x] Cash desk summary and transaction list</li>
+</ul>
 
-### Gestion des Articles
+## Installation and setup
 
-- **Création d'un nouvel article** : Permet de créer un nouvel article dans un magasin.
-- **Récupération de tous les articles** : Récupère tous les articles d'un magasin, avec prise en charge de la pagination.
-- **Vente d'articles** : Permet de vendre des articles et de mettre à jour le stock.
-- **Récupération d'un article par ID** : Permet de récupérer un article spécifique en fonction de son identifiant.
-- **Reconstitution du stock d'un article** : Permet de réapprovisionner le stock d'un article spécifique.
+Create a `.env` file with the following properties:
 
-### Gestion des Transactions
+```
+# PORT
+PORT=3001
 
-- **Création d'une nouvelle transaction** : Permet de créer une nouvelle transaction.
-- **Récupération de toutes les transactions par caisse** : Récupère toutes les transactions effectuées sur une caisse donnée, avec prise en charge de la pagination et du filtrage par type et plage de dates.
-- **Comptage du nombre total de transactions par caisse** : Fournit le nombre total de transactions effectuées sur une caisse spécifique.
+# FRONTEND URL
+FRONTEND_URL="http://localhost:3000"
 
-### Utilisateurs
+# DATABASE URL
+DATABASE_URL="file:./dev.db"
 
-- **Création d'un nouvel utilisateur avec magasin et caisse** : Permet de créer un nouvel utilisateur avec des informations de magasin et de caisse associées.
-- **Récupération d'un utilisateur par nom d'utilisateur** : Permet de récupérer les détails d'un utilisateur en fonction de son nom d'utilisateur.
+# JWT
+JWT_SECRET="sectret"
+JWT_REFRESH_SECRET="secret"
+JWT_EXPIRATION_TIME='1h'
+JWT_REFRESH_EXPIRATION_TIME='30d'
+```
 
-## Utilisation
+Installing dependencies
 
-L'API fournit des points de terminaison RESTful pour interagir avec les services mentionnés ci-dessus. Voici quelques exemples d'utilisation :
+```bash
+$ npm install
+```
 
-- `POST /articles` : Crée un nouvel article.
-- `GET /articles` : Récupère tous les articles d'un magasin.
-- `POST /articles/sell` : Vente d'articles.
-- `GET /articles/:id` : Récupère un article par ID.
-- `PATCH /articles/:id` : Réapprovisionne le stock d'un article.
-- `POST /transactions` : Crée une nouvelle transaction.
-- `GET /transactions` : Récupère toutes les transactions par caisse.
-- `GET /transactions/count` : Compte le nombre total de transactions par caisse.
-- `POST /users` : Crée un nouvel utilisateur avec des détails associés.
-- `GET /users/:username` : Récupère les détails d'un utilisateur par nom d'utilisateur.
+## Running the app
 
-Pour plus de détails sur les endpoints disponibles et leurs paramètres, référez-vous à la documentation Swagger générée automatiquement.
+```bash
+# development
+$ npm run start:dev
+```
