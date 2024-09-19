@@ -8,22 +8,25 @@ async function main() {
   const hashedPassword =
     '$2a$12$K15Bsnu.FyjTSiEr5MmZe.FuG.vm51SUfM.nZF/gThqJN75k/mMJy'; // password123
 
-  // Create a user with the hashed password
-  const user = await prisma.user.create({
-    data: {
+  // Upsert user to create or update if exists
+  const user = await prisma.user.upsert({
+    where: { email: 'user@test.com' },
+    update: {}, // No update fields needed
+    create: {
       id: randomUUID(),
       username: 'test',
-      email: 'test@store.com',
-      hashedPassword, // Use the hashed password
+      email: 'user@test.com',
+      hashedPassword,
     },
   });
 
-  // Create a store for the user
-  const store = await prisma.store.create({
-    data: {
+  // Upsert store to create or update if exists
+  const store = await prisma.store.upsert({
+    where: { name: 'Test Store' },
+    update: {}, // No update fields needed
+    create: {
       id: randomUUID(),
       name: 'Test Store',
-      userId: user.id,
       description: 'A store for testing purposes',
       status: 'active',
       nif: '123456789',
@@ -31,55 +34,66 @@ async function main() {
       address: '123 Test Street',
       city: 'Test City',
       phone: '1234567890',
-      email: 'test@store.com',
+      email: 'user@test.com',
+      user: { connect: { id: user.id } }, // Connect the user relation
     },
   });
 
-  // Create a cash desk for the store
-  const cashDesk = await prisma.cashDesk.create({
-    data: {
+  // Upsert cash desk for the store
+  const cashDesk = await prisma.cashDesk.upsert({
+    where: { storeId: store.id },
+    update: {}, // No update fields needed
+    create: {
       id: randomUUID(),
       currentAmount: 0, // Set initial amount to 0
-      storeId: store.id,
+      store: { connect: { id: store.id } }, // Connect the store relation
     },
   });
 
-  // Create multiple articles for the store
+  // Create or upsert multiple articles for the store
   const articles = await Promise.all(
     Array.from({ length: 10 }).map((_, i) =>
-      prisma.article.create({
-        data: {
+      prisma.article.upsert({
+        where: {
+          name_storeId: { name: `Article ${i + 1}`, storeId: store.id },
+        }, // Use unique constraint
+        update: {}, // No update fields needed
+        create: {
           id: randomUUID(),
           name: `Article ${i + 1}`,
           purchasePrice: Math.floor(Math.random() * 5000 + 1000), // Prices between 1,000 and 6,000 without decimals
           sellingPrice: Math.floor(Math.random() * 7000 + 2000), // Prices between 2,000 and 9,000 without decimals
           stock: Math.floor(Math.random() * 100) + 50,
           unit: 'piece',
-          storeId: store.id,
+          store: { connect: { id: store.id } }, // Connect the store relation
         },
       }),
     ),
   );
 
-  // Create a client
-  const client = await prisma.client.create({
-    data: {
+  // Upsert client for the store
+  const client = await prisma.client.upsert({
+    where: { name_storeId: { name: 'Test Client', storeId: store.id } },
+    update: {}, // No update fields needed
+    create: {
       id: randomUUID(),
       name: 'Test Client',
       email: 'client@test.com',
       phone: '0987654321',
       address: '456 Client Road',
       city: 'Client City',
-      storeId: store.id,
+      store: { connect: { id: store.id } }, // Connect the store relation
     },
   });
 
-  // Create an order for the client
-  const order = await prisma.order.create({
-    data: {
+  // Upsert order for the client
+  const order = await prisma.order.upsert({
+    where: { id: randomUUID() }, // Generate random ID for now (can be optimized)
+    update: {}, // No update fields needed
+    create: {
       id: randomUUID(),
-      clientId: client.id,
-      storeId: store.id,
+      client: { connect: { id: client.id } }, // Connect the client relation
+      store: { connect: { id: store.id } }, // Connect the store relation
       isPaid: false,
       isDelivered: false,
     },
@@ -91,21 +105,23 @@ async function main() {
       prisma.orderItem.create({
         data: {
           id: randomUUID(),
-          orderId: order.id,
-          articleId: article.id,
+          order: { connect: { id: order.id } }, // Connect the order relation
+          article: { connect: { id: article.id } }, // Connect the article relation
           quantity: Math.floor(Math.random() * 10) + 1,
         },
       }),
     ),
   );
 
-  // Create an invoice for the order
-  const invoice = await prisma.invoice.create({
-    data: {
+  // Upsert invoice for the order
+  const invoice = await prisma.invoice.upsert({
+    where: { orderId: order.id }, // Unique relation to order
+    update: {}, // No update fields needed
+    create: {
       id: randomUUID(),
-      orderId: order.id,
-      clientId: client.id,
-      storeId: store.id,
+      order: { connect: { id: order.id } }, // Connect the order relation
+      client: { connect: { id: client.id } }, // Connect the client relation
+      store: { connect: { id: store.id } }, // Connect the store relation
       amount: orderItems.reduce(
         (total, item) =>
           total +
@@ -123,15 +139,15 @@ async function main() {
       prisma.invoiceItem.create({
         data: {
           id: randomUUID(),
-          invoiceId: invoice.id,
-          articleId: orderItem.articleId,
+          invoice: { connect: { id: invoice.id } }, // Connect the invoice relation
+          article: { connect: { id: orderItem.articleId } }, // Connect the article relation
           quantity: orderItem.quantity,
         },
       }),
     ),
   );
 
-  // Create transactions for the cash desk throughout the year
+  // Create transactions for the cash desk
   const startDate = new Date(new Date().getFullYear(), 0, 1);
   const endDate = new Date();
 
@@ -149,18 +165,18 @@ async function main() {
         id: randomUUID(),
         type,
         amount,
-        label: `${label}`,
-        cashDeskId: cashDesk.id,
+        label,
+        cashDesk: { connect: { id: cashDesk.id } }, // Connect the cash desk relation
         createdAt: new Date(date),
         updatedAt: new Date(date),
         articles: {
-          connect: articles.map((article) => ({ id: article.id })),
+          connect: articles.map((article) => ({ id: article.id })), // Connect all articles
         },
       },
     });
   }
 
-  console.log('Database seeded with modified fictive data');
+  console.log('Database seeded successfully with upsert and connect.');
 }
 
 main()
