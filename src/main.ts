@@ -4,13 +4,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT;
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   });
 
@@ -28,7 +28,7 @@ async function bootstrap() {
 
   await app.listen(port, () => {
     console.log(
-      `[Nest] ${process.pid}  - ${new Date().toLocaleString()}     LOG [NestApplication] Nest application running on http://localhost:${port}`,
+      `[Nest] ${process.pid}  - ${new Date().toLocaleString()}     LOG [NestApplication] Nest application running on port: ${port}`,
     );
   });
 }
